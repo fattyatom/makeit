@@ -10,7 +10,7 @@ In the photo, green is the part that sits on the window sill, red is the
 apron down to the sink, sloped toward the drainage point. Diagonals inside
 each shape show the fall from the corners to the lowest point.
 
-Design (v3, from the user's round-3 answers and tap sketch):
+Design (v4; v3 plus the round-5 changes below):
 - **Plate** (3 pieces, 210 mm each): ribbed cover on the sill, styled on
   `Sink_Drain_v3.stl`. Falls 10 mm toward the sink, 8 mm nose with a drip
   groove, end walls at the wall and mullion ends. Joins on rib centres with
@@ -23,8 +23,16 @@ Design (v3, from the user's round-3 answers and tap sketch):
   includes the collector and spout). Each join is spigot-in-socket: the
   upstream end narrows and sits inside the next piece above a 2.5 mm
   ridge, so water drops onto the next floor and never reaches the seam.
-- **Spout**: left edge at 380 mm, 14 mm wide inside, reaches 100 mm out
-  from the sill face beside the tap, falls 2°, clears the 3 mm rim.
+- **Spout**: left edge at 380 mm, 10.4 mm wide inside (13.6 outside, so it
+  clears the tap at 395), reaches 100 mm out from the sill face beside the
+  tap, falls 2°, clears the 3 mm rim.
+- **Plinth** (2 halves, back and front, split through the tap centre so
+  they can go on round the tap body): covers the tap base and the steel
+  round it, from over the channel to 5 mm in front of and 10 mm right of
+  the base. Top sits about at sill height, falls 3° toward the spout and
+  1.5° toward the channel, and drips into both. Rests on the channel
+  flange, the spout wall and the tap's base flange. The front half laps
+  6 mm over the back half.
 
 ## Inputs (in `inputs/`)
 | File | What it is |
@@ -49,7 +57,7 @@ Hand measurements win over the scan. Note which is which.
 | sill face to tap base | 55 | user (round 4) | back of tap body ~60-61 |
 | tap base diameter / height | 50 / 6 | user sketch | |
 | tap body diameter / height | 43 / 100 | user sketch | |
-| tap centre from left wall | 430 | GUESS | only checks the spout clears the base (needs >= 424) |
+| tap left edge from left wall | 395 | user (round 5) | tap centre at 420 |
 
 ## Constraints
 - Printer / bed size: 255 x 255 x 255 (user)
@@ -64,3 +72,4 @@ Hand measurements win over the scan. Note which is which.
 | 2026-10-24 | v1 | no | User: gap is 40 mm not 3 mm, spout >= 100 mm out, sill piece may look like Sink_Drain_v3.stl. v1 test slice withdrawn. |
 | 2026-10-24 | v2 | not yet | Plate x3 + apron x2 released, test slice `print/sink-drain-v2-test-slice.stl`; gutter waits on tap measurements |
 | 2026-10-24 | v3 | not yet | Full-width channels both sides into one spout, spigot joins, end walls, tap from sketch. Test slice `print/sink-drain-v3-test-slice.stl`. v2 files withdrawn. |
+| 2026-10-25 | v4 | not yet | Spout narrowed (it ran 2 mm into the tap at 395); added the two-piece plinth round the tap base. v3 files withdrawn. |

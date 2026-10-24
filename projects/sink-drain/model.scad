@@ -29,7 +29,7 @@ tap_base_d = 50;       // user sketch
 tap_base_h = 6;        // user sketch
 tap_body_d = 43;       // user sketch
 tap_body_h = 100;      // user sketch
-tap_y = 430;           // GUESS: tap centre from the left wall (right of the spout)
+tap_y = 395 + 25;      // user: tap's left-most point 395 from the left wall
 
 /* [Design] */
 plate_rise = 10;       // user: back edge this much above the front
@@ -48,25 +48,33 @@ flange_t = 2;
 top_tilt = 2;          // wall tops and flange fall this much toward the sink (°)
 gutter_fall = 1.2;     // channel floors, toward the spout (°)
 spout_fall = 2;        // spout floor, out over the bowl (°)
-chan_w_spout = 14;     // spout inside width
+chan_w_spout = 10.4;   // spout inside width: fits between 380 and the tap at 395
 spigot_len = 8;        // how far a spigot reaches into the next piece
 ridge_w = 1.6;         // ridge across the floor where a spigot comes in
 ridge_h = 2.5;
 spigot_gap = 0.5;      // spigot underside above the ridge
 rim_room = 0.5;        // spout underside above the rim
-tap_room = 2;          // clearance round the tap
+tap_room = 1;          // clearance round the tap
 pin_d = 1.75;          // filament pins across each plate join
 pin_len = 10;          // into each side
+plinth_right = 10;     // plinth reaches this far right of the tap base
+plinth_front = 5;      // and this far in front of it
+plinth_back = 36;      // back edge, over the channel so it drips in
+plinth_t = 2;          // top plate
+plinth_fall_y = 3;     // top falls toward the spout (°)
+plinth_fall_x = 1.5;   // and toward the channel (°)
+plinth_lip = 6;        // front half laps this far over the back half
 hollow = true;         // pocket under channel floors, open to the strip
 
 /* [Print] */
-piece = "all";         // "plate" | "left" | "right" | "all"
+piece = "all";         // "plate" | "left" | "right" | "plinth" | "all"
 bed = 255;             // user: 255 x 255 x 255
 diag_angle = 57;       // for pieces longer than the bed
 plate_segments = 3;
 clearance = 0.3;       // per side: off the riser, the wall, the mullion and between pieces
 test_slice = 0;        // >0: only the first N mm of the piece (from its low end for channels)
-segment = -1;          // plate: which third; left: 0 = by the spout, 1 = by the wall; -1 = all
+segment = -1;          // plate: which third; left: 0 = by the spout, 1 = by the wall;
+                       // plinth: 0 = back half, 1 = front half; -1 = all
 orient = "installed";  // "print": plate flat, channels upside down on their wall tops
 
 z0 = -riser_drop;
@@ -108,6 +116,19 @@ left_total = spout_y - 2 * clearance;
 left_seg = (left_total - clearance) / 2;
 left_f0 = [fc + step, fc + step + left_seg * tan(gutter_fall) + step];
 function chan_floor(f0, y) = f0 + y * tan(gutter_fall);
+
+// Plinth round the tap, local y from its left edge (just inside the spout).
+tap_x = tap_gap + tap_base_d / 2;
+pl_y = spout_y + wall_t + chan_w_spout - 1;
+pl_w = tap_y + tap_base_d / 2 + plinth_right - pl_y;
+pl_x1 = tap_x + tap_base_d / 2 + plinth_front;
+pl_tx = tan(plinth_fall_x);
+pl_ty = tan(plinth_fall_y);
+// Top plane: its back-left corner rests just clear of the channel flange
+// and the spout wall.
+pl_z0 = top_z(plinth_back) + plinth_t;
+function plinth_top(x, y) = pl_z0 + y * pl_ty + (x - plinth_back) * pl_tx;
+pl_hole = tap_body_d / 2 + 0.7;
 
 assert(rib_count % plate_segments == 0, "plate joins must land on rib centres");
 assert(plate_pin_z - pin_hole / 2 >= 1.2 && plate_top(-15) + rib_h - plate_pin_z - pin_hole / 2 >= 1.2,
@@ -235,6 +256,52 @@ module left_piece(seg) {
     channel(left_seg, left_f0[seg], spigot = true, closed = seg == 1, socket = seg == 0);
 }
 
+// Region from the steel up to the plinth plane (raised by dz), over a
+// rectangle in the plinth's frame.
+module under_plinth(x0, x1, y0, y1, dz = 0, zb = z0) {
+    polyhedron(
+        points = [[x0, y0, zb], [x1, y0, zb], [x1, y1, zb], [x0, y1, zb],
+                  [x0, y0, plinth_top(x0, y0) + dz], [x1, y0, plinth_top(x1, y0) + dz],
+                  [x1, y1, plinth_top(x1, y1) + dz], [x0, y1, plinth_top(x0, y1) + dz]],
+        faces = [[0, 1, 2, 3], [4, 7, 6, 5], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]]);
+}
+
+// One half of the plinth round the tap. It rests on the channel flange,
+// the spout wall and the tap's base flange, and drains off its back-left
+// corner into the spout and the channel. Back half: x up to the tap centre.
+// Front half: sits 0.3 mm higher and laps over the back half.
+module plinth_half(half) {
+    dz = half == 1 ? plinth_t + clearance : 0;
+    xa = half == 0 ? plinth_back : tap_x - plinth_lip;
+    xm = half == 0 ? tap_x : pl_x1;
+    ty = tap_y - pl_y;
+    difference() {
+        union() {
+            // Top plate.
+            difference() {
+                under_plinth(xa, xm, 0, pl_w, dz);
+                translate([0, 0, -plinth_t]) under_plinth(xa - 1, xm + 1, -1, pl_w + 1, dz, z0 - plinth_t - 1);
+            }
+            // Skirts to the steel: right side, front, and left beyond the spout.
+            // (Tops sit 0.05 mm into the plate so each half is one clean solid.)
+            sx = max(xa, xfl + clearance);
+            ds = dz - 0.05;
+            if (half == 0) under_plinth(sx, xm, pl_w - wall_t, pl_w, ds);
+            else {
+                under_plinth(tap_x, xm, pl_w - wall_t, pl_w, ds);
+                under_plinth(xm - wall_t, xm, 0, pl_w, ds);
+                under_plinth(spout_reach + clearance, xm, 0, wall_t, ds);
+            }
+            // Ring round the tap body, standing on the base flange.
+            intersection() {
+                translate([tap_x, ty, z0 + tap_base_h]) cylinder(r = pl_hole + wall_t, h = 80, $fn = 96);
+                under_plinth(half == 0 ? plinth_back : tap_x, half == 0 ? tap_x : pl_x1, 0, pl_w, dz - 0.05);
+            }
+        }
+        translate([tap_x, ty, z0 - 1]) cylinder(r = pl_hole, h = 120, $fn = 96);
+    }
+}
+
 // Sill, strip, bowl rim and tap, for previews only.
 module context() {
     tx = tap_gap + tap_base_d / 2;
@@ -252,17 +319,19 @@ module context() {
 // Each piece in its own frame (y from 0 at its low end), and where it goes.
 function p_len(p) = p == "plate" ? plate_len : p == "left" ? left_seg : right_len;
 function p_segs(p) = p == "plate" ? plate_segments : 1;
-function p_list(p) = p == "left" ? (segment < 0 ? [0, 1] : [segment]) : [segment];
+function p_list(p) = p == "left" || p == "plinth" ? (segment < 0 ? [0, 1] : [segment]) : [segment];
 
 module body(p, seg) {
     if (p == "plate") print_cut(plate_len, test_slice, plate_segments, seg) plate();
     else if (p == "left") print_cut(left_seg, test_slice) left_piece(seg);
+    else if (p == "plinth") plinth_half(seg);
     else print_cut(right_len, test_slice) right_piece();
 }
 
 module place(p, seg) {
     if (p == "plate") translate([0, clearance, 0]) children();
     else if (p == "right") translate([0, spout_y, 0]) children();
+    else if (p == "plinth") translate([0, pl_y, 0]) children();
     // Left pieces run from the spout toward the wall: mirrored in y.
     else translate([0, spout_y - clearance - seg * (left_seg + clearance), 0]) mirror([0, 1, 0]) children();
 }
@@ -273,14 +342,18 @@ module place(p, seg) {
 module print_piece(p, seg) {
     y0 = p == "plate" && test_slice == 0 && seg >= 0 ? plate_len / plate_segments * seg : 0;
     plen = test_slice > 0 ? test_slice : p == "plate" && seg >= 0 ? plate_len / plate_segments : p_len(p);
-    rotate([0, 0, plen > bed - 5 ? diag_angle : 0]) translate([0, -plen / 2, 0]) {
+    // Plinth halves: upside down on their top plane.
+    n = [-pl_tx, -pl_ty, 1] / norm([-pl_tx, -pl_ty, 1]);
+    p0 = [plinth_back, 0, pl_z0 + (seg == 1 ? plinth_t + clearance : 0)];
+    if (p == "plinth") translate([0, 0, n * p0]) rotate(a = acos(-n[2]), v = cross(n, [0, 0, -1])) body(p, seg);
+    else rotate([0, 0, plen > bed - 5 ? diag_angle : 0]) translate([0, -plen / 2, 0]) {
         if (p == "plate") translate([0, -y0, 0]) body(p, seg);
         else translate([0, 0, -cos(top_tilt)]) rotate([0, top_tilt, 0]) rotate([180, 0, 0])
             translate([0, -plen, 0]) body(p, seg);
     }
 }
 
-pieces = piece == "all" ? ["plate", "left", "right"] : [piece];
+pieces = piece == "all" ? ["plate", "left", "right", "plinth"] : [piece];
 
 if (orient == "print") {
     for (i = [0 : len(pieces) - 1]) translate([i * 300, 0, 0]) {
@@ -291,6 +364,6 @@ if (orient == "print") {
     }
 } else {
     %context();
-    for (p = pieces) for (s = (p == "left" ? (segment < 0 ? [0, 1] : [segment]) : [segment]))
+    for (p = pieces) for (s = p_list(p))
         place(p, s) body(p, s);
 }
