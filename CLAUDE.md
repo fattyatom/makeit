@@ -14,6 +14,11 @@ judgement is yours.
 - `templates/part/` — copied by `python -m makeit new <name>`
 - `lib/makeit.scad` — shared helpers (`print_cut`, `segment_y`, `keep_y`)
 - `makeit/` — Python CLI: `new`, `analyze`, `section`, `build`
+- `artifact/makeit.html` — the makeit page (claude.ai artifact
+  `https://claude.ai/artifact/AaAurTgD9kAzqn1F95etpy`) where the user files
+  part requests. A session started from it follows
+  `.claude/skills/make-part/SKILL.md`. Republish edits to that URL, and
+  keep its field names in step with the skill.
 
 Setup (the cloud session hook does this): `scripts/setup.sh`.
 Tests: `python -m pytest -q`. Every change to `makeit/` or `lib/` ships a test.
