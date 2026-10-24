@@ -1,0 +1,674 @@
+<title>makeit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* Layout: a parts queue (job tickets) beside one open ticket; stacks to a single view on phones. */
+:root {
+  --bg: #f2f4f1; --surface: #ffffff; --sunk: #e8ece7; --ink: #17201b; --muted: #5a675f; --line: #d3dbd5;
+  --accent: #2d6a4f; --accent-ink: #ffffff; --accent-soft: #e0ede5;
+  --warn: #9a5a08; --warn-soft: #fbefd8; --bad: #b3261e; --bad-soft: #f9e1df; --info: #2b5c8a; --info-soft: #e1ebf5;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #101512; --surface: #171e1a; --sunk: #0c100e; --ink: #e5ebe7; --muted: #98a69e; --line: #2a352f;
+  --accent: #6dbd92; --accent-ink: #0b1811; --accent-soft: #1d3127;
+  --warn: #e6a64c; --warn-soft: #382a16; --bad: #ef8a80; --bad-soft: #3b1f1c; --info: #8fb9e2; --info-soft: #1b2a39;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #101512; --surface: #171e1a; --sunk: #0c100e; --ink: #e5ebe7; --muted: #98a69e; --line: #2a352f;
+  --accent: #6dbd92; --accent-ink: #0b1811; --accent-soft: #1d3127;
+  --warn: #e6a64c; --warn-soft: #382a16; --bad: #ef8a80; --bad-soft: #3b1f1c; --info: #8fb9e2; --info-soft: #1b2a39;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Header with a millimetre rule along its foot */
+header.top { padding-block: 20px 0; display: flex; flex-direction: column; gap: 14px; }
+.brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand h1 { font-size: 30px; line-height: 1; }
+.brand p { margin: 0; color: var(--muted); font-size: 14px; }
+.rule { height: 14px; border-bottom: 1px solid var(--muted);
+  background:
+    repeating-linear-gradient(to right, var(--muted) 0 1px, transparent 1px 50px) bottom left / 100% 14px no-repeat,
+    repeating-linear-gradient(to right, var(--muted) 0 1px, transparent 1px 25px) bottom left / 100% 9px no-repeat,
+    repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 5px) bottom left / 100% 5px no-repeat;
+  opacity: .8; }
+
+.notice { margin-top: 16px; padding: 10px 12px; border-radius: var(--r); background: var(--warn-soft); color: var(--warn); font-size: 14px; }
+
+main { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; margin-top: 20px; align-items: start; }
+@media (max-width: 760px) {
+  main { grid-template-columns: minmax(0, 1fr); }
+  main.show-detail .queue { display: none; }
+  main:not(.show-detail) .detail { display: none; }
+}
+@media (min-width: 761px) { .back { display: none !important; } }
+
+/* Queue of tickets */
+.queue, #tickets { display: flex; flex-direction: column; gap: 10px; }
+.queue-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ticket { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; align-items: center; width: 100%; text-align: left;
+  padding: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; }
+.ticket:hover { border-color: var(--muted); }
+.ticket[aria-current="true"] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.thumb { width: 52px; height: 52px; border-radius: 4px; background: var(--sunk); object-fit: cover; display: grid; place-items: center;
+  font-family: var(--mono); font-size: 11px; color: var(--muted); overflow: hidden; }
+.ticket .t-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticket .t-meta { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 12.5px; flex-wrap: wrap; }
+.empty { padding: 18px; border: 1px dashed var(--line); border-radius: var(--r); color: var(--muted); font-size: 14px; }
+
+/* Status chips */
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border-radius: 99px; font: 500 11.5px/1.7 var(--mono);
+  letter-spacing: .04em; text-transform: uppercase; background: var(--sunk); color: var(--muted); white-space: nowrap; }
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chip.queued, .chip.working { background: var(--info-soft); color: var(--info); }
+.chip.needs-input { background: var(--warn-soft); color: var(--warn); }
+.chip.ready { background: var(--accent-soft); color: var(--accent); }
+.chip.failed { background: var(--bad-soft); color: var(--bad); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; text-decoration: none; color: var(--ink); }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.small { padding: 4px 10px; font-size: 13.5px; }
+.btn.quiet { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.quiet:hover { color: var(--ink); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* Detail */
+.detail { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.sheet h2 { font-size: 19px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.title-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.name-input { font-family: var(--display); font-weight: 600; font-size: 26px; line-height: 1.15; border: 0; border-bottom: 1px dashed var(--line);
+  background: transparent; padding: 2px 0; width: 100%; min-width: 0; }
+.name-input:focus { outline: none; border-bottom-color: var(--accent); }
+.folder { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+label.field { display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; color: var(--muted); }
+.in { width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); color: var(--ink); }
+.in:focus { outline: none; border-color: var(--accent); }
+textarea.in { resize: vertical; min-height: 84px; line-height: 1.5; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* Measurement rows: name | value mm | source | notes | x */
+.mrows { display: flex; flex-direction: column; gap: 8px; }
+.mrow { display: grid; grid-template-columns: minmax(0, 1.3fr) 108px 118px minmax(0, 1.4fr) 32px; gap: 8px; align-items: center; }
+.mhead { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.mval { position: relative; }
+.mval input { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; padding-right: 34px; }
+.mval span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font: 12px var(--mono); color: var(--muted); pointer-events: none; }
+@media (max-width: 620px) {
+  .mrow { grid-template-columns: minmax(0, 1fr) 108px 32px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .mrow .mname { grid-area: 1 / 1; } .mrow .mval { grid-area: 1 / 2; } .mrow .x { grid-area: 1 / 3; }
+  .mrow .msrc { grid-area: 2 / 1; } .mrow .mnote { grid-area: 2 / 2 / 3 / 4; }
+  .mrow.mhead { display: none; }
+}
+.x { width: 32px; height: 32px; border-radius: var(--r); border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; }
+.x:hover { border-color: var(--line); color: var(--bad); }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+
+/* Inputs gallery */
+.files { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.file { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--bg); display: flex; flex-direction: column; min-width: 0; }
+.file .pic { aspect-ratio: 4 / 3; width: 100%; max-width: 100%; object-fit: cover; background: var(--sunk); display: grid; place-items: center;
+  font: 12px var(--mono); color: var(--muted); }
+.file .cap { padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+.file .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file .row { display: flex; gap: 4px; align-items: center; justify-content: space-between; }
+.file select { font-size: 12.5px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.status-line { font-size: 13.5px; color: var(--muted); }
+.status-line:empty { display: none; }
+.status-line.err { color: var(--bad); }
+.status-line.ok { color: var(--accent); }
+
+/* Claude's side of the ticket */
+.question { padding: 12px 14px; border-radius: var(--r); background: var(--warn-soft); color: var(--ink); border-left: 3px solid var(--warn); }
+.question b { color: var(--warn); font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; display: block; margin-bottom: 4px; }
+.summary { margin: 0; max-width: 68ch; white-space: pre-wrap; }
+.previews { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.previews figure { margin: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: #f7f7f5; }
+.previews img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; }
+.previews figcaption { padding: 4px 8px; font: 11.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #5a675f; background: #ecefeb; }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; font-size: 13.5px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: var(--mono); overflow-wrap: anywhere; }
+.feedback-log { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; }
+.feedback-log div { padding: 6px 10px; background: var(--bg); border-radius: var(--r); }
+.feedback-log time { font: 11.5px var(--mono); color: var(--muted); margin-right: 6px; }
+
+@media (prefers-reduced-motion: no-preference) { .btn, .ticket { transition: border-color .15s, filter .15s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>makeit</h1>
+      <p>Scan, sketch and measure. Claude models it and hands back a file to print.</p>
+    </div>
+    <div class="rule" aria-hidden="true"></div>
+  </header>
+  <div id="notice" class="notice" hidden></div>
+
+  <main id="main">
+    <section class="queue" aria-label="Parts">
+      <div class="queue-head">
+        <span class="eyebrow">Parts</span>
+        <button id="newPart" class="btn small primary" type="button">New part</button>
+      </div>
+      <div id="tickets">
+        <div class="empty">Loading your parts…</div>
+      </div>
+    </section>
+
+    <section class="detail" id="detail" aria-live="polite">
+      <div class="empty">Pick a part, or start a new one. Each part gets a name, what it's for, the measurements that have to fit, and photos, sketches or a scan.</div>
+    </section>
+  </main>
+</div>
+
+<input type="file" id="pickImages" accept="image/*" multiple hidden>
+<input type="file" id="pickScan" accept=".obj,.ply,.stl,.txt" hidden>
+
+<script>
+(() => {
+  // Filled in after the first publish: this page's own link, given to the sessions it starts.
+  const ARTIFACT_URL = "https://claude.ai/artifact/AaAurTgD9kAzqn1F95etpy";
+  const REPO_URL = "https://github.com/fattyatom/makeit";
+  const CCR = "Claude Code Remote";
+  const SOURCES = ["calipers", "tape", "ruler", "profile gauge", "scan", "sketch", "guess"];
+  const MATERIALS = ["PETG", "ASA", "PLA", "TPU", "other"];
+  const STATUS_LABEL = { draft: "Draft", queued: "Queued", working: "Working", "needs-input": "Needs you", ready: "Ready", failed: "Failed" };
+
+  let db = null, assets = null, mcp = null, downloads = null;
+  let parts = [];             // [{id, data}]
+  let selectedId = null;
+  let draft = null;           // editable copy of the selected part's own fields
+  let renderedFor = null;     // id whose form is on screen
+  let writeChain = Promise.resolve();
+  let saveTimer = null;
+
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const slugify = (s) => String(s || "part").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "part";
+  const blob = (id) => "/_blob/" + id;
+  const when = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }); } catch { return ""; } };
+  const partById = (id) => parts.find((p) => p.id === id);
+
+  function notice(text) { const n = $("#notice"); n.textContent = text; n.hidden = !text; }
+
+  // ---------- queue ----------
+  function renderQueue() {
+    const box = $("#tickets");
+    if (!db) { box.innerHTML = `<div class="empty">Parts are saved with this page in claude.ai. Open it there to see and add them.</div>`; return; }
+    if (!parts.length) { box.innerHTML = `<div class="empty">No parts yet. Press <b>New part</b> to describe the first thing you want to print.</div>`; return; }
+    const sorted = [...parts].sort((a, b) => String(b.data.updatedAt || "").localeCompare(String(a.data.updatedAt || "")));
+    box.innerHTML = "";
+    for (const p of sorted) {
+      const d = p.data, st = d.status || "draft";
+      const prev = d.claude?.previews?.[0]?.id || (d.inputs || []).find((i) => i.contentType?.startsWith("image/"))?.id;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "ticket"; b.setAttribute("aria-current", String(p.id === selectedId));
+      b.innerHTML = `${prev ? `<img class="thumb" alt="" src="${blob(prev)}">` : `<span class="thumb">no img</span>`}
+        <span style="min-width:0;display:flex;flex-direction:column;gap:3px">
+          <span class="t-name">${esc(d.name || "Untitled part")}</span>
+          <span class="t-meta"><span class="chip ${st}">${STATUS_LABEL[st] || st}</span><span>${(d.measurements || []).length} meas.</span><span>${esc(when(d.updatedAt))}</span></span>
+        </span>`;
+      b.addEventListener("click", () => select(p.id));
+      box.appendChild(b);
+    }
+  }
+
+  function select(id) {
+    flushSave();
+    selectedId = id;
+    renderedFor = null;
+    $("#main").classList.toggle("show-detail", !!id);
+    renderQueue();
+    renderDetail();
+    window.scrollTo({ top: 0 });
+  }
+
+  // ---------- detail ----------
+  function snapshotDraft(d) {
+    return {
+      name: d.name || "",
+      purpose: d.purpose || "",
+      measurements: (d.measurements || []).map((m) => ({ name: m.name || "", value: m.value ?? "", source: m.source || "calipers", notes: m.notes || "" })),
+      constraints: { bed: d.constraints?.bed || "", material: d.constraints?.material || "PETG", notes: d.constraints?.notes || "" },
+      inputs: (d.inputs || []).map((i) => ({ ...i })),
+    };
+  }
+
+  function renderDetail() {
+    const host = $("#detail");
+    const p = selectedId && partById(selectedId);
+    if (!p) { host.innerHTML = `<div class="empty">Pick a part, or start a new one. Each part gets a name, what it's for, the measurements that have to fit, and photos, sketches or a scan.</div>`; renderedFor = null; return; }
+    draft = snapshotDraft(p.data);
+    renderedFor = p.id;
+    host.innerHTML = `
+      <div class="actions back"><button class="btn small quiet" type="button" id="backBtn">← All parts</button></div>
+      <div class="sheet">
+        <div class="title-row" style="justify-content:space-between">
+          <span id="chipBox"></span>
+          <span class="folder" id="folder"></span>
+        </div>
+        <input id="f-name" class="name-input" aria-label="Part name" placeholder="Name the part" value="${esc(draft.name)}">
+        <label class="field" for="f-purpose">What it's for, and what it has to do
+          <textarea id="f-purpose" class="in" placeholder="e.g. Cover the gap between the sink and the wall so splashes drain back into the sink.">${esc(draft.purpose)}</textarea>
+        </label>
+      </div>
+
+      <div id="claudeBox"></div>
+
+      <div class="sheet">
+        <div class="sheet-head"><h2>Measurements</h2><button class="btn small" type="button" id="addM">Add measurement</button></div>
+        <p class="hint">Anything that has to fit to the millimetre. Hand measurements win over the scan.</p>
+        <div class="mrows" id="mrows"></div>
+      </div>
+
+      <div class="sheet">
+        <div class="sheet-head"><h2>Photos, sketches, scan</h2>
+          <div class="actions">
+            <button class="btn small" type="button" id="addImg">Add photos or sketch</button>
+            <button class="btn small" type="button" id="addScan">Add scan</button>
+          </div>
+        </div>
+        <p class="hint">Put a ruler or card in photos for scale. Scans: export OBJ or ASCII PLY from your scanner app, under 20 MB.</p>
+        <div class="files" id="files"></div>
+        <div class="status-line" id="uploadStatus"></div>
+      </div>
+
+      <div class="sheet">
+        <h2>Printing</h2>
+        <div class="grid2">
+          <label class="field" for="f-bed">Print bed (mm)<input id="f-bed" class="in" placeholder="256 × 256 × 256" value="${esc(draft.constraints.bed)}"></label>
+          <label class="field" for="f-mat">Material<select id="f-mat" class="in">${MATERIALS.map((m) => `<option ${m === draft.constraints.material ? "selected" : ""}>${m}</option>`).join("")}</select></label>
+        </div>
+        <label class="field" for="f-cnotes">Must and must not
+          <textarea id="f-cnotes" class="in" style="min-height:60px" placeholder="e.g. must not stop the tap from swinging; nothing visible from the front">${esc(draft.constraints.notes)}</textarea>
+        </label>
+      </div>
+
+      <div class="sheet" id="startBox"></div>
+      <div class="actions"><span class="status-line" id="saveStatus"></span></div>`;
+
+    $("#backBtn").addEventListener("click", () => select(null));
+    $("#f-name").addEventListener("input", (e) => { draft.name = e.target.value; updateFolder(); scheduleSave(); });
+    $("#f-purpose").addEventListener("input", (e) => { draft.purpose = e.target.value; scheduleSave(); });
+    $("#f-bed").addEventListener("input", (e) => { draft.constraints.bed = e.target.value; scheduleSave(); });
+    $("#f-mat").addEventListener("change", (e) => { draft.constraints.material = e.target.value; scheduleSave(); });
+    $("#f-cnotes").addEventListener("input", (e) => { draft.constraints.notes = e.target.value; scheduleSave(); });
+    $("#addM").addEventListener("click", () => { draft.measurements.push({ name: "", value: "", source: "calipers", notes: "" }); renderMeasurements(true); scheduleSave(); });
+    $("#addImg").addEventListener("click", () => $("#pickImages").click());
+    $("#addScan").addEventListener("click", () => $("#pickScan").click());
+    $("#addImg").disabled = $("#addScan").disabled = !assets;
+    if (!assets) $("#uploadStatus").textContent = "Uploading needs edit access to this page in claude.ai.";
+
+    renderMeasurements(false);
+    renderFiles();
+    updateFolder();
+    renderLive();
+  }
+
+  function updateFolder() {
+    const p = partById(selectedId); if (!p) return;
+    const slug = p.data.slug || slugify(draft?.name);
+    const f = $("#folder"); if (f) f.textContent = "projects/" + slug;
+  }
+
+  function renderMeasurements(focusLast) {
+    const box = $("#mrows"); if (!box) return;
+    box.innerHTML = draft.measurements.length ? `<div class="mrow mhead"><span>Name</span><span style="text-align:right">Value</span><span>Measured with</span><span>Notes</span><span></span></div>` : `<p class="hint" style="margin:0">None yet. Add the gaps, lengths and thicknesses the part depends on.</p>`;
+    draft.measurements.forEach((m, i) => {
+      const row = document.createElement("div");
+      row.className = "mrow";
+      row.innerHTML = `
+        <input class="in mname" id="m-name-${i}" aria-label="Measurement name" placeholder="gap at left end" value="${esc(m.name)}">
+        <span class="mval"><input class="in" id="m-val-${i}" aria-label="Value in millimetres" inputmode="decimal" placeholder="0.0" value="${esc(m.value)}"><span>mm</span></span>
+        <select class="in msrc" id="m-src-${i}" aria-label="Measured with">${SOURCES.map((s) => `<option ${s === m.source ? "selected" : ""}>${s}</option>`).join("")}</select>
+        <input class="in mnote" id="m-note-${i}" aria-label="Notes" placeholder="where exactly" value="${esc(m.notes)}">
+        <button class="x" type="button" aria-label="Remove measurement">×</button>`;
+      row.querySelector(`#m-name-${i}`).addEventListener("input", (e) => { m.name = e.target.value; scheduleSave(); });
+      row.querySelector(`#m-val-${i}`).addEventListener("input", (e) => { m.value = e.target.value.replace(",", "."); scheduleSave(); });
+      row.querySelector(`#m-src-${i}`).addEventListener("change", (e) => { m.source = e.target.value; scheduleSave(); });
+      row.querySelector(`#m-note-${i}`).addEventListener("input", (e) => { m.notes = e.target.value; scheduleSave(); });
+      row.querySelector(".x").addEventListener("click", () => { draft.measurements.splice(i, 1); renderMeasurements(false); scheduleSave(); });
+      box.appendChild(row);
+    });
+    if (focusLast) box.querySelector(".mrow:last-child .mname")?.focus();
+  }
+
+  function renderFiles() {
+    const box = $("#files"); if (!box) return;
+    box.innerHTML = draft.inputs.length ? "" : `<p class="hint" style="margin:0;grid-column:1/-1">Nothing attached yet.</p>`;
+    draft.inputs.forEach((f, i) => {
+      const card = document.createElement("div");
+      card.className = "file";
+      const isImg = f.contentType?.startsWith("image/");
+      card.innerHTML = `${isImg ? `<img class="pic" alt="${esc(f.name)}" src="${blob(f.id)}">` : `<span class="pic">3D scan</span>`}
+        <div class="cap"><span class="fname" title="${esc(f.name)}">${esc(f.name)}</span>
+          <div class="row">${isImg ? `<select aria-label="Kind" id="k-${i}"><option ${f.kind === "photo" ? "selected" : ""}>photo</option><option ${f.kind === "sketch" ? "selected" : ""}>sketch</option></select>` : `<span class="eyebrow">scan</span>`}
+          <button class="btn small quiet" type="button" data-rm>Remove</button></div></div>`;
+      card.querySelector(`#k-${i}`)?.addEventListener("change", (e) => { f.kind = e.target.value; scheduleSave(); });
+      const rm = card.querySelector("[data-rm]");
+      rm.addEventListener("click", async () => {
+        if (rm.dataset.armed !== "1") { rm.dataset.armed = "1"; rm.textContent = "Confirm"; return; }
+        draft.inputs.splice(i, 1); renderFiles(); scheduleSave();
+        try { await assets?.delete(f.id); } catch { /* the row is gone either way */ }
+      });
+      box.appendChild(card);
+    });
+  }
+
+  // Parts of the detail view driven by what Claude and the session write: re-rendered on every snapshot.
+  function renderLive() {
+    const p = partById(selectedId); if (!p || renderedFor !== p.id) return;
+    const d = p.data, st = d.status || "draft";
+    $("#chipBox").innerHTML = `<span class="chip ${st}">${STATUS_LABEL[st] || st}</span>`;
+    updateFolder();
+
+    const c = d.claude || {};
+    const box = $("#claudeBox");
+    const hasClaude = c.summary || c.question || (c.previews || []).length || st === "needs-input";
+    box.innerHTML = !hasClaude ? "" : `<div class="sheet">
+      <div class="sheet-head"><h2>From Claude${c.version ? ` · v${esc(c.version)}` : ""}</h2>${c.updatedAt ? `<span class="folder">${esc(when(c.updatedAt))}</span>` : ""}</div>
+      ${st === "needs-input" && c.question ? `<div class="question"><b>Question</b>${esc(c.question)}</div>` : ""}
+      ${c.summary ? `<p class="summary">${esc(c.summary)}</p>` : ""}
+      ${(c.previews || []).length ? `<div class="previews">${c.previews.map((v) => `<figure><img alt="${esc(v.label || "preview")} view" src="${blob(v.id)}"><figcaption>${esc(v.label || "")}</figcaption></figure>`).join("")}</div>` : ""}
+      ${c.stl?.id || (c.files || []).length ? `<div class="actions">
+        ${c.stl?.id ? `<button class="btn primary" type="button" id="dlStl">Download STL (.zip)</button>` : ""}
+        ${(c.files || []).map((f) => `<a class="btn" href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)} on GitHub</a>`).join("")}
+      </div>` : ""}
+      <div class="status-line" id="dlStatus"></div>
+    </div>`;
+    $("#dlStl")?.addEventListener("click", () => downloadStl(d));
+
+    renderStart();
+  }
+
+  function renderStart() {
+    const p = partById(selectedId); const box = $("#startBox"); if (!p || !box) return;
+    const d = p.data, s = d.session;
+    if (!s?.id) {
+      box.innerHTML = `<h2>Hand it to Claude</h2>
+        <p class="hint">Starts a Claude Code session on the makeit repo. Claude reads this page, asks about anything missing, and posts previews and files back here.</p>
+        <div class="actions"><button class="btn primary" type="button" id="startBtn">Start design session</button></div>
+        <div class="status-line" id="startStatus"></div>`;
+      $("#startBtn").addEventListener("click", startSession);
+      if (!mcp) { $("#startBtn").disabled = true; $("#startStatus").textContent = "Starting sessions works when this page is open in claude.ai."; }
+      return;
+    }
+    const fb = (d.feedback || []).slice(-5);
+    const typed = $("#fbText")?.value || "";   // keep a half-written message across live updates
+    box.innerHTML = `<div class="sheet-head"><h2>Session</h2><a class="btn small" href="${esc(s.url)}" target="_blank" rel="noopener">Open in Claude</a></div>
+      <dl class="kv"><dt>Started</dt><dd>${esc(new Date(s.startedAt).toLocaleString())}</dd><dt>Session</dt><dd id="sessState">${esc(s.id)}</dd></dl>
+      ${fb.length ? `<div class="feedback-log">${fb.map((f) => `<div><time>${esc(when(f.at))}</time>${esc(f.text)}</div>`).join("")}</div>` : ""}
+      <label class="field" for="fbText">Answer a question or ask for a change
+        <textarea id="fbText" class="in" style="min-height:64px" placeholder="e.g. Test slice is 1 mm tight at the left end; the wall lip can be 6 mm shorter."></textarea>
+      </label>
+      <div class="actions">
+        <button class="btn primary" type="button" id="fbSend">Send to Claude</button>
+        <button class="btn small quiet" type="button" id="sessCheck">Check session</button>
+      </div>
+      <div class="status-line" id="fbStatus"></div>`;
+    $("#fbText").value = typed;
+    $("#fbSend").addEventListener("click", sendFeedback);
+    $("#sessCheck").addEventListener("click", checkSession);
+    if (!mcp) { $("#fbSend").disabled = $("#sessCheck").disabled = true; $("#fbStatus").textContent = "Sending works when this page is open in claude.ai."; }
+  }
+
+  // ---------- saving ----------
+  function setSave(text, cls = "") { const s = $("#saveStatus"); if (s) { s.textContent = text; s.className = "status-line " + cls; } }
+  function scheduleSave() { clearTimeout(saveTimer); setSave("Editing…"); saveTimer = setTimeout(flushSave, 700); }
+  function flushSave() {
+    if (!saveTimer || !db || !renderedFor || !draft) return;
+    clearTimeout(saveTimer); saveTimer = null;
+    const id = renderedFor;
+    const body = {
+      name: draft.name.trim() || "Untitled part",
+      purpose: draft.purpose,
+      measurements: draft.measurements.map((m) => ({ ...m })),
+      constraints: { ...draft.constraints },
+      inputs: draft.inputs.map((i) => ({ ...i })),
+      updatedAt: new Date().toISOString(),
+    };
+    writeChain = writeChain.then(async () => {
+      try { await db.doc("parts/" + id).update(body); setSave("Saved", "ok"); }
+      catch (e) { setSave(saveError(e), "err"); }
+    });
+  }
+  function saveError(e) {
+    if (e?.code === "invalid_argument") return "This page is read-only for you, so changes aren't saved.";
+    if (e?.code === "quota_exceeded") return "This page's storage is full. Delete old parts to save more.";
+    return "Couldn't save just now. Your edits stay on screen; change anything to try again.";
+  }
+
+  async function newPart() {
+    if (!db) return;
+    const id = "p-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const now = new Date().toISOString();
+    try {
+      await db.doc("parts/" + id).set({ name: "Untitled part", purpose: "", measurements: [], constraints: { bed: "", material: "PETG", notes: "" },
+        inputs: [], status: "draft", createdAt: now, updatedAt: now });
+      selectedId = id;
+      // The snapshot listener renders the new ticket and form.
+    } catch (e) { notice(saveError(e)); }
+  }
+
+  // ---------- uploads ----------
+  async function toJpeg(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+      const scale = Math.min(1, 2400 / Math.max(img.naturalWidth, img.naturalHeight));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.naturalWidth * scale); cv.height = Math.round(img.naturalHeight * scale);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      return await new Promise((res) => cv.toBlob(res, "image/jpeg", 0.88));
+    } finally { URL.revokeObjectURL(url); }
+  }
+
+  function uploadError(e) {
+    switch (e?.code) {
+      case "too_large": return "That file is over 20 MB. Export a smaller or decimated version.";
+      case "unsupported_type": case "invalid_request": return "That file type can't be stored here.";
+      case "quota_or_state": return "This page's file storage is full.";
+      case "rate_limited": return "Too many uploads at once. Wait a moment and try again.";
+      case "upstream_auth": return "Your sign-in lapsed. Reload the page and try again.";
+      default: return "Upload failed. Try again in a moment.";
+    }
+  }
+
+  async function addImages(files) {
+    const st = $("#uploadStatus");
+    for (const file of files) {
+      st.className = "status-line"; st.textContent = `Uploading ${file.name}…`;
+      try {
+        const jpg = await toJpeg(file);
+        const r = await assets.upload(jpg, { type: "image/jpeg" });
+        const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+        draft.inputs.push({ id: r.id, name, kind: /sketch|draw/i.test(file.name) ? "sketch" : "photo", contentType: "image/jpeg" });
+        renderFiles(); scheduleSave();
+        st.className = "status-line ok"; st.textContent = `Added ${name}`;
+      } catch (e) { st.className = "status-line err"; st.textContent = e?.code ? uploadError(e) : `Couldn't read ${file.name} as an image.`; }
+    }
+  }
+
+  async function addScan(file) {
+    const st = $("#uploadStatus");
+    st.className = "status-line"; st.textContent = `Checking ${file.name}…`;
+    let text;
+    try { text = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer()); }
+    catch {
+      st.className = "status-line err";
+      st.textContent = "This scan is a binary file. Export it as OBJ or ASCII PLY, or ask Claude in the session to take it from the repo.";
+      return;
+    }
+    try {
+      st.textContent = `Uploading ${file.name}…`;
+      const r = await assets.upload(new Blob([text], { type: "text/plain" }), { type: "text/plain" });
+      draft.inputs.push({ id: r.id, name: file.name, kind: "scan", contentType: "text/plain" });
+      renderFiles(); scheduleSave();
+      st.className = "status-line ok"; st.textContent = `Added ${file.name}`;
+    } catch (e) { st.className = "status-line err"; st.textContent = uploadError(e); }
+  }
+
+  // ---------- Claude Code sessions ----------
+  function mcpError(e, action) {
+    switch (e?.code) {
+      case "server_not_connected": return `Add the ${CCR} connector in claude.ai Settings → Connectors, then try again.`;
+      case "needs_reauth": return `Reconnect ${CCR} in claude.ai Settings → Connectors, then try again.`;
+      case "selection_required": return `Choose which ${CCR} connector this page should use when claude.ai asks, then try again.`;
+      case "approval_required": return `This page needs your approval to ${action}. Press the button again and allow it when claude.ai asks.`;
+      case "not_in_manifest": return `${CCR} is turned off for this page. Turn it on from the page's Permissions menu.`;
+      case "blocked_by_policy": return `Your organization blocks ${CCR} here.`;
+      case "tool_error": return `${CCR} refused: ${e.message || "no reason given"}`;
+      case "server_unavailable": case "upstream_error":
+        return action === "read the session" ? "Couldn't reach Claude Code just now. Try again in a moment."
+          : "Claude Code didn't answer in time. It may still have gone through: check claude.ai/code before trying again.";
+      default: return `Couldn't ${action} here. Open this page in claude.ai and try again.`;
+    }
+  }
+
+  function briefText(d) {
+    const ms = (d.measurements || []).filter((m) => m.name || m.value)
+      .map((m) => `- ${m.name || "?"}: ${m.value === "" ? "?" : m.value} mm (${m.source}${m.notes ? "; " + m.notes : ""})`).join("\n") || "- none given yet";
+    const ins = (d.inputs || []).map((i) => `- ${i.name} (${i.kind}, asset ${i.id})`).join("\n") || "- none";
+    return `Purpose:\n${d.purpose || "(not written yet)"}\n\nMeasurements:\n${ms}\n\nInputs:\n${ins}\n\nPrinting: bed ${d.constraints?.bed || "?"}, ${d.constraints?.material || "PETG"}. ${d.constraints?.notes || ""}`;
+  }
+
+  async function startSession() {
+    flushSave();
+    const p = partById(selectedId); if (!p) return;
+    const btn = $("#startBtn"), st = $("#startStatus");
+    const say = (t, cls = "") => { st.textContent = t; st.className = "status-line " + cls; };
+    if (!ARTIFACT_URL) { say("This copy of the page isn't linked to its published address yet.", "err"); return; }
+    if (!(draft.name.trim() && draft.purpose.trim())) { say("Give the part a name and say what it's for first.", "err"); return; }
+    btn.disabled = true;
+    const slug = p.data.slug || slugify(draft.name);
+    try {
+      say("Finding your cloud environment…");
+      const envs = (await mcp.callTool(CCR, "list_environments", { limit: 20 }, { cache: false })).payload?.environments || [];
+      const env = envs.find((e) => e.state === "active" && e.kind === "anthropic_cloud") || envs.find((e) => e.state === "active");
+      if (!env?.environment_id) { say("No active Claude Code environment found. Create one at claude.ai/code first.", "err"); btn.disabled = false; return; }
+
+      say("Starting the session…");
+      const d = { ...p.data, ...draft };
+      const prompt = `Design the part "${draft.name.trim()}" requested from my makeit page.
+
+Follow .claude/skills/make-part/SKILL.md in this repo.
+- Artifact: ${ARTIFACT_URL}
+- Part id: ${p.id} (db collection "parts")
+- Project folder: projects/${slug}
+
+The page record is the source of truth. A copy of the brief as of now:
+
+${briefText(d)}`;
+      const res = await mcp.callTool(CCR, "create_session", {
+        environment_id: env.environment_id, source_url: REPO_URL, title: `makeit: ${draft.name.trim()}`.slice(0, 120), prompt,
+      }, { cache: false });
+      const sid = (JSON.stringify(res.payload ?? res.content ?? "").match(/session_[A-Za-z0-9]+/) || [])[0];
+      if (!sid) { say("Claude Code answered without a session id. Check claude.ai/code for a session named after this part.", "err"); return; }
+      const session = { id: sid, url: "https://claude.ai/code/" + sid, startedAt: new Date().toISOString() };
+      writeChain = writeChain.then(() => db.doc("parts/" + p.id).update({ status: "queued", slug, session, updatedAt: session.startedAt }))
+        .catch((e) => say(saveError(e), "err"));
+      await writeChain;
+    } catch (e) { say(mcpError(e, "start a session"), "err"); btn.disabled = false; }
+  }
+
+  async function sendFeedback() {
+    const p = partById(selectedId); if (!p?.data.session?.id) return;
+    const text = $("#fbText").value.trim(), btn = $("#fbSend");
+    // The box re-renders on live updates, so look the status line up each time.
+    const say = (t, cls = "") => { const st = $("#fbStatus"); if (st) { st.textContent = t; st.className = "status-line " + cls; } };
+    if (!text) { say("Write what you'd like changed first.", "err"); return; }
+    btn.disabled = true; say("Sending…");
+    try {
+      await mcp.callTool(CCR, "send_message", { session_id: p.data.session.id,
+        message: `Feedback from the makeit page on part ${p.id}:\n\n${text}\n\nUpdate the part's record on the page when the next version is ready.` }, { cache: false });
+      const feedback = [...(p.data.feedback || []), { at: new Date().toISOString(), text }].slice(-20);
+      writeChain = writeChain.then(() => db.doc("parts/" + p.id).update({ feedback, status: "working", updatedAt: new Date().toISOString() }))
+        .catch((e) => say(saveError(e), "err"));
+      await writeChain;
+      $("#fbText").value = "";
+      say("Sent. Claude picks it up in the session.", "ok");
+    } catch (e) { say(mcpError(e, "send to the session"), "err"); btn.disabled = false; }
+  }
+
+  async function checkSession() {
+    const p = partById(selectedId); if (!p?.data.session?.id) return;
+    const out = $("#sessState"), st = $("#fbStatus");
+    try {
+      const r = await mcp.callTool(CCR, "get_session", { session_id: p.data.session.id }, { cache: false });
+      const s = r.payload?.ccr || r.payload || {};
+      const bucket = String(s.status_bucket || s.session_status || "").replace(/^SESSION_STATUS_(BUCKET_)?/, "").toLowerCase().replace(/_/g, " ");
+      out.textContent = `${p.data.session.id} · ${bucket || "unknown state"}`;
+      st.textContent = ""; st.className = "status-line";
+    } catch (e) { st.textContent = mcpError(e, "read the session"); st.className = "status-line err"; }
+  }
+
+  async function downloadStl(d) {
+    const st = $("#dlStatus");
+    const say = (t, cls = "") => { st.textContent = t; st.className = "status-line " + cls; };
+    if (!downloads) { say("Downloads work when this page is open in claude.ai. Use the GitHub link instead.", "err"); return; }
+    if (!window.JSZip) { say("The zip helper didn't load. Use the GitHub link instead.", "err"); return; }
+    try {
+      say("Preparing…");
+      const resp = await fetch(blob(d.claude.stl.id));
+      if (!resp.ok) throw new Error("missing");
+      const zip = new JSZip();
+      const filename = d.claude.stl.filename || (d.slug || "part") + ".stl";
+      zip.file(filename, await resp.text());
+      const out = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+      await downloads.save({ filename: filename.replace(/\.stl$/i, "") + ".zip", data: out });
+      say("Saved. Unzip it and open the STL in your slicer.", "ok");
+    } catch (e) {
+      if (e?.code === "declined") say("");
+      else if (e?.code === "rate_limited") say("A save prompt is already open.", "err");
+      else if (e?.message === "missing") say("That STL isn't stored on the page any more. Use the GitHub link.", "err");
+      else say("Couldn't prepare the download. Use the GitHub link instead.", "err");
+    }
+  }
+
+  // ---------- wiring ----------
+  $("#newPart").addEventListener("click", newPart);
+  $("#pickImages").addEventListener("change", (e) => { const f = [...e.target.files]; e.target.value = ""; if (f.length && assets) addImages(f); });
+  $("#pickScan").addEventListener("change", (e) => { const f = e.target.files[0]; e.target.value = ""; if (f && assets) addScan(f); });
+
+  async function boot() {
+    const use = (n) => (window.claude?.use ? window.claude.use(n).catch(() => null) : Promise.resolve(null));
+    db = await use("db");
+    if (!db) { $("#newPart").disabled = true; renderQueue(); notice("Open this page in claude.ai to save parts and start design sessions."); return; }
+    db.collection("parts").onSnapshot((snap) => {
+      parts = snap.docs.filter((d) => d.exists).map((d) => ({ id: d.id, data: d.data() }));
+      renderQueue();
+      if (selectedId && !partById(selectedId)) { select(null); return; }
+      if (selectedId && renderedFor !== selectedId) { $("#main").classList.add("show-detail"); renderDetail(); }
+      else renderLive();
+    }, (e) => {
+      if (e.code === "revoked") { notice("This page's access changed. Reload to continue."); return; }
+      notice("Live updates stopped. Reload the page to reconnect.");
+    });
+    [assets, mcp, downloads] = await Promise.all([use("assets"), use("mcp"), use("downloads")]);
+    if (renderedFor) renderDetail();
+  }
+  boot();
+})();
+</script>

@@ -12,7 +12,25 @@ Claude session in this repo ◄──┘
   analyze scan → model.scad → build → look at previews → test slice → print/
 ```
 
-## How to use it
+## Start from your phone
+
+The [makeit page](https://claude.ai/artifact/AaAurTgD9kAzqn1F95etpy) (source:
+`artifact/makeit.html`) is the front door. Open it in the Claude app or on
+claude.ai:
+
+1. **New part**: name it, say what it's for, add the measurements, and
+   attach photos, sketches or a scan (OBJ or ASCII PLY).
+2. **Start design session** starts a Claude Code session on this repo. That
+   session follows `.claude/skills/make-part/SKILL.md`: it reads the part
+   from the page and models it, then posts previews and an STL download
+   back to the page.
+3. Answer Claude's questions, or send fit feedback ("1 mm tight at the
+   left"), from the box on the part. It goes straight to the session.
+
+The page needs the **Claude Code Remote** connector, which claude.ai
+provides. It asks for your approval the first time it starts a session.
+
+## How to use it by hand
 
 1. **Capture** (about 5 minutes)
    - Scan the area with a LiDAR scanner app, e.g. *3D Scanner App* (free).
