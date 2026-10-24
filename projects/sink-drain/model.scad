@@ -1,211 +1,235 @@
-// Sink drain cover: two sloped plates that sit loose on the tiled window
-// sill behind the sink, one each side of the tap. Each falls from its far and
-// back corners to a drain point at the front edge behind the tap; a front lip
-// keeps the water on the plate until it gets there, and a spout on the left
-// plate carries it past the tap into the left bowl. A skirt hangs over the
-// sill's front face and the 3 mm gap so splashes land on the steel.
+// Sink drain: three kinds of loose-fitting piece that send every drop from
+// the window sill into the sink.
+//   plate  - ribbed cover on the sill; falls toward the sink and drips off
+//            its nose, just past the sill edge (3 pieces).
+//   apron  - on the flat 40 mm steel strip left of the spout; keys over the
+//            bowl rim and tips the drips into the left bowl (2 pieces).
+//   gutter - on the strip right of the spout; a channel that falls toward
+//            the spout, runs behind the tap, and turns into a spout reaching
+//            out over the left bowl (1 piece).
 //
-// Section frame (both plates are modelled in it): x = depth, x=0 at the
-// sill's front face, + toward the window; y = along the sill from the
-// junction behind the tap (y=0) out to the far end; z = up, z=0 on the sill
-// top. The left plate's frame is the installed frame with y toward the left
-// wall; the right plate is its mirror image.
+// Installed frame: x = toward the sink, x=0 at the sill's front face (the
+// sill is at x<0); y = along the window from the left wall; z = up, z=0 on
+// the sill top (the steel strip is at z=-riser_drop).
 use <../../lib/makeit.scad>
 
 /* [Measured] */
-sill_length = 630;     // photo annotation: left wall to the window mullion, back edge
-left_length = 350;     // photo annotation: left end to the tap, along the left bowl
-sill_depth = 120;      // photo annotation: window frame to the sill's front edge, right end
-riser_drop = 30;       // photo annotation: sill top down to the steel sink deck
-rim_gap = 3;           // photo annotation + user: sill front face to the steel rim
-spout_reach = 110;     // user: spout outlet this far out from the sill front face
-tap_neck_d = 35;       // GUESS: tap pillar diameter
+sill_length = 630;     // photo annotation: left wall to the window mullion
+sill_depth = 120;      // user: window frame to the sill's front edge, both sides
+riser_drop = 30;       // photo annotation: sill top down to the steel strip
+strip_width = 40;      // user: sill front face to the bowl edge, flat steel
+rim_h = 3;             // user: bowl rim height above the strip
+spout_y = 380;         // user: spout centre from the left wall
+spout_reach = 100;     // user: at least this far out from the sill face
+tap_y = 420;           // GUESS: tap centre from the left wall
 tap_base_d = 55;       // GUESS: tap base flange diameter
-tap_base_h = 8;        // GUESS: base flange height above the deck
-tap_setback = 5;       // GUESS: sill front face to the edge of the tap base
-tap_offset = -18;      // GUESS: tap centre along y from the junction (+ = toward the left wall)
+tap_base_h = 8;        // GUESS: flange height above the strip
+tap_pillar_d = 35;     // GUESS
+tap_gap = 22;          // GUESS: sill front face to the back of the tap base
 
 /* [Design] */
-corner_rise = 10;      // user: back and far corners this much above the drain point
-plate_min = 3;         // plate thickness at the drain point
-skirt_t = 3;           // covers the 3 mm gap so drips land on the steel
-skirt_lift = 1;        // skirt stops this far above the steel; the plate rests on the sill
-lip_h = 5;             // front lip above the plate top
-lip_t = 2;
-dam_t = 2;             // end dam at the far end of each plate
-spout_angle = 50;      // in plan, from straight out from the sill toward the left wall
-spout_end_lift = 12;   // outlet floor this far above the steel deck
-spout_w = 14;          // inside width of the channel
-spout_wall = 1.6;
-spout_depth = 6;       // inside depth of the channel
-inlet_len = 16;        // how far the channel's trough reaches back into the plate
+plate_rise = 10;       // user: back edge this much above the front
+plate_min = 3;         // floor thickness at the nose
+nose = 8;              // plate overhang past the sill edge
+rib_count = 30;        // ribs along the plate (one more than this, ends included)
+rib_fill = 0.5;        // rib width / pitch (reference STL: 10 mm ribs, 10 mm grooves)
+rib_h = 4;             // above the groove floor
+drip_w = 2;            // groove under the nose so drips let go at the edge
+drip_d = 1.2;
+wall_t = 1.6;
+apron_over = 10;       // apron front edge past the bowl edge
+apron_t = 2;           // apron thickness at its front edge
+apron_fall = 5;        // degrees, toward the bowl
+rim_notch = 6;         // underside clears the rim from this far back from the bowl edge
+rim_room = 1;          // clearance over the rim
+chan_w = 14;           // gutter channel inside width
+gutter_fall = 2;       // degrees, along the strip toward the spout
+spout_fall = 4;        // degrees, out over the bowl
+floor_t = 2;           // gutter and spout floor
 tap_room = 2;          // clearance round the tap
-pin_d = 1.75;          // filament pins across each joint
+pin_d = 1.75;          // filament pins across each join
 pin_len = 10;          // into each side
 
 /* [Print] */
-section = "both";      // "left" | "right" | "both"
+piece = "all";         // "plate" | "apron" | "gutter" | "all"
 bed = 255;             // user: 255 x 255 x 255
-left_segments = 2;     // 350 mm doesn't fit the bed; the right plate fits diagonally
-right_segments = 1;
-clearance = 0.3;       // per side, off the riser, the wall and the mullion
-test_slice = 0;        // >0: only the first N mm from the junction end
-segment = -1;          // which piece of the chosen section, -1 = all
-orient = "installed";  // "print": spout piece stands on its junction end, the rest lie on the skirt
+diag_angle = 57;       // for pieces longer than the bed: the gutter's L then takes 227 x 226
+plate_segments = 3;
+apron_segments = 2;
+clearance = 0.3;       // per side: off the riser, the wall and the mullion
+test_slice = 0;        // >0: only the first N mm from the left end of the piece
+segment = -1;          // which segment of the chosen piece, -1 = all
+orient = "installed";  // "print": plate flat, apron on its back face, gutter upside down
 
-right_length = sill_length - left_length;
-xf = -(clearance + skirt_t);         // front face of skirt and lip
-xb = sill_depth - clearance;         // back edge, at the window frame
+z0 = -riser_drop;
 pin_hole = pin_d + 0.35;
-pin_z = 3.2;
-pin_xs = [xf + 0.45 * (xb - xf), xf + 0.85 * (xb - xf)];
-tap_x = -(tap_setback + tap_base_d / 2);
 
-function sec_len(sec) = (sec == "left" ? left_length : right_length) - clearance;
-function sec_segs(sec) = sec == "left" ? left_segments : right_segments;
-// Plate top: L-shaped contours round the drain corner, with a valley along
-// the diagonal from the drain corner to the far back corner.
-function top_z(x, y, len) = plate_min + corner_rise * max(y / len, (x - xf) / (xb - xf));
+// Plate
+plate_len = sill_length - 2 * clearance;
+xb = -(sill_depth - clearance);      // back edge, at the window frame
+plate_fall = atan(plate_rise / (nose - xb));
+function plate_top(x) = plate_min + (nose - x) * tan(plate_fall);
+pitch = plate_len / rib_count;
+plate_pin_xs = [-100, -55, -15];
+plate_pin_z = 4.5;
 
-// Spout axis and start: leaves the front face just clear of the junction.
-spout_y0 = (spout_w / 2 + spout_wall) * cos(spout_angle) + 1;
-spout_z0 = plate_min - 1;            // channel floor where it leaves the plate
-spout_run = (spout_reach + xf) / cos(spout_angle);     // in plan, from the skirt face
-spout_drop = spout_z0 + riser_drop - spout_end_lift;
-spout_fall = atan(spout_drop / spout_run);
-spout_length = sqrt(spout_run * spout_run + spout_drop * spout_drop);
-echo(spout_length = spout_length, spout_fall = spout_fall);
+// Gutter and spout
+spout_out_w = chan_w + 2 * wall_t;
+yg0 = spout_y - spout_out_w / 2;     // gutter's left end (spout's left wall)
+gutter_len = sill_length - clearance - yg0;
+xg0 = clearance;                     // back face, against the riser
+x_in = xg0 + wall_t;                 // inside of the back wall
+xg1 = x_in + chan_w + wall_t;        // front face of the channel
+// Spout floor where it leaves the channel: high enough that its underside
+// clears the rim a few mm past the bowl edge.
+floor0 = z0 + rim_h + rim_room + floor_t + (strip_width + 5 - x_in) * tan(spout_fall);
+function gutter_floor(y) = floor0 + max(0, y - spout_out_w) * tan(gutter_fall);
+function spout_floor(x) = floor0 - (x - x_in) * tan(spout_fall);
+// Every wall top lies on this plane, so the gutter prints upside down on it.
+function gutter_top(x) = -1 - x * tan(spout_fall);
 
-assert(left_length > 0 && right_length > 0, "left_length must be inside sill_length");
-assert(plate_min >= 2, "plate thinner than 2 mm at the drain");
-assert(pin_z - pin_hole / 2 >= 1.2 && plate_min + corner_rise / 2 - pin_z - pin_hole / 2 >= 1.2,
-       "pin holes leave walls under 1.2 mm");
-assert(spout_fall >= 3, "spout falls less than 3°: lower spout_end_lift");
-assert(skirt_t >= rim_gap, "skirt must cover the gap so drips land on the steel");
+// Apron
+apron_len = yg0 - 2 * clearance;
+xa1 = strip_width + apron_over;
+xr0 = strip_width - rim_notch;
+apron_tf = z0 + rim_h + rim_room + apron_t;
+function apron_top(x) = apron_tf + (xa1 - x) * tan(apron_fall);
+apron_pin_xs = [8, 26];
+apron_pin_z = z0 + 4;
 
-module plate(len) {
-    t0 = top_z(xf, 0, len);
-    t1 = plate_min + corner_rise;
-    polyhedron(
-        points = [[xf, 0, 0], [xb, 0, 0], [xb, len, 0], [xf, len, 0],
-                  [xf, 0, t0], [xb, 0, t1], [xb, len, t1], [xf, len, t1]],
-        faces = [[0, 1, 2, 3], [4, 7, 6], [4, 6, 5],
-                 [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]]);
+assert(rib_count % plate_segments == 0, "plate joins must land on rib centres");
+assert(plate_pin_z - pin_hole / 2 >= 1.2 && plate_top(-15) + rib_h - plate_pin_z - pin_hole / 2 >= 1.2,
+       "plate pin holes leave walls under 1.2 mm");
+assert(apron_pin_z - z0 - pin_hole / 2 >= 1.2 && apron_top(max(apron_pin_xs)) - apron_pin_z - pin_hole / 2 >= 1.2,
+       "apron pin holes leave walls under 1.2 mm");
+assert(nose + tap_room <= tap_gap, "plate nose reaches the tap");
+assert(xg1 + tap_room <= tap_gap, "gutter channel too wide to pass behind the tap");
+assert(spout_y + spout_out_w / 2 + tap_room <= tap_y - tap_base_d / 2, "spout hits the tap base");
+assert(spout_reach > strip_width + 10, "spout must reach past the bowl edge");
+assert(gutter_top(xg1) - gutter_floor(gutter_len) >= 6, "gutter too shallow at its far end");
+
+// Profile in (x, z), extruded along y from 0 to len.
+module extrude_y(len) {
+    translate([0, len, 0]) rotate([90, 0, 0]) linear_extrude(len) children();
 }
 
-module skirt(len) {
-    translate([xf, 0, -riser_drop + skirt_lift]) cube([skirt_t, len, riser_drop - skirt_lift + 0.01]);
-}
-
-module lip(len, from) {
-    hull() {
-        translate([xf, from, 0]) cube([lip_t, 0.01, top_z(xf, from, len) + lip_h]);
-        translate([xf, len - 0.01, 0]) cube([lip_t, 0.01, top_z(xf, len, len) + lip_h]);
-    }
-}
-
-module dam(len) {
-    translate([xf, len - dam_t, 0]) cube([xb - xf, dam_t, plate_min + corner_rise + lip_h]);
-}
-
-// Channel along +x from the origin, floor at z=0, then aimed down the spout.
-module along_spout() {
-    translate([xf, spout_y0, spout_z0])
-        rotate([0, 0, 180 - spout_angle]) rotate([0, spout_fall, 0]) children();
-}
-
-module spout_outer() {
-    along_spout() translate([0, -spout_w / 2 - spout_wall, -spout_wall])
-        cube([spout_length, spout_w + 2 * spout_wall, spout_wall + spout_depth]);
-}
-
-module spout_void() {
-    along_spout() translate([-inlet_len, -spout_w / 2, 0])
-        cube([spout_length + inlet_len + 1, spout_w, 60]);
-}
-
-module tap_clear(ty) {
-    translate([tap_x, ty, -riser_drop - 1]) {
-        cylinder(d = tap_neck_d + 2 * tap_room, h = 200, $fn = 72);
-        cylinder(d = tap_base_d + 2 * tap_room, h = tap_base_h + tap_room + 1, $fn = 72);
-    }
-}
-
-module pin_holes(y, len) {
-    for (x = pin_xs) translate([x, y, pin_z]) rotate([90, 0, 0])
+module pins_at(y, xs, z) {
+    for (x = xs) translate([x, y, z]) rotate([90, 0, 0])
         cylinder(d = pin_hole, h = 2 * (pin_len + 0.5), center = true, $fn = 24);
 }
 
-module part(sec) {
-    len = sec_len(sec);
-    segs = sec_segs(sec);
-    left = sec == "left";
-    intersection() {
-        difference() {
-            union() {
-                plate(len); skirt(len); dam(len);
-                lip(len, left ? spout_y0 + spout_w : 0);
-                if (left) spout_outer();
-            }
-            if (left) spout_void();
-            tap_clear(left ? tap_offset : -tap_offset);
-            for (i = [0 : segs - 1]) pin_holes(len / segs * i, len);
-        }
-        translate([-500, 0, -500]) cube([1000, len, 1000]);
-    }
-}
-
-// Sill, riser, steel deck and tap, for previews only.
-module context() {
-    y0 = -right_length; y1 = left_length;
-    translate([0, y0, -riser_drop]) cube([sill_depth, y1 - y0, riser_drop]);           // sill + riser
+module plate() {
+    rw = pitch * rib_fill;
     difference() {
-        translate([-rim_gap - 160, y0, -riser_drop - 2]) cube([160, y1 - y0, 2]);       // steel deck
-        translate([-rim_gap - 150, tap_offset + tap_base_d / 2 + 15, -riser_drop - 5])
-            cube([140, y1 - tap_offset - tap_base_d / 2 - 25, 10]);                     // left bowl
+        union() {
+            extrude_y(plate_len) polygon([[xb, 0], [nose, 0], [nose, plate_top(nose)], [xb, plate_top(xb)]]);
+            // Ribs run toward the sink and stop at the sill edge, so the
+            // grooves empty across the plain nose.
+            intersection() {
+                for (k = [0 : rib_count]) translate([0, k * pitch - rw / 2, 0]) extrude_y(rw)
+                    polygon([[xb, 0], [0, 0], [0, plate_top(0) + rib_h], [xb, plate_top(xb) + rib_h]]);
+                translate([xb - 1, 0, -1]) cube([nose - xb + 2, plate_len, 100]);
+            }
+        }
+        translate([nose - 3 - drip_w, -1, -1]) cube([drip_w, plate_len + 2, drip_d + 1]);
+        for (j = [1 : plate_segments - 1]) pins_at(plate_len / plate_segments * j, plate_pin_xs, plate_pin_z);
     }
-    translate([tap_x, tap_offset, -riser_drop]) {
+}
+
+module apron() {
+    xw = xg0 + wall_t;
+    k = rim_h + rim_room;
+    difference() {
+        // Back upstand stops 1 mm under the plate's nose; the nose drips
+        // onto the apron in front of it.
+        extrude_y(apron_len) polygon([
+            [xg0, z0], [xr0, z0], [xr0 + k, z0 + k], [xa1, z0 + k], [xa1, apron_tf],
+            [xw, apron_top(xw)], [xw, -1], [xg0, -1]]);
+        for (j = [1 : apron_segments - 1]) pins_at(apron_len / apron_segments * j, apron_pin_xs, apron_pin_z);
+    }
+}
+
+module gutter() {
+    big = 60;
+    // Underside of the spout: stands on the strip, then a 45° step up and
+    // over the rim.
+    xs = (floor0 - floor_t + x_in * tan(spout_fall) - z0 + xr0) / (1 + tan(spout_fall));
+    difference() {
+        intersection() {
+            union() {
+                translate([xg0, 0, z0]) cube([xg1 - xg0, gutter_len, big]);
+                extrude_y(spout_out_w) polygon([
+                    [xg0, z0], [xr0, z0], [xs, spout_floor(xs) - floor_t],
+                    [spout_reach, spout_floor(spout_reach) - floor_t], [spout_reach, big], [xg0, big]]);
+            }
+            // Wall tops on one plane (the print bed).
+            extrude_y(gutter_len) polygon([[xg0 - 1, z0 - 1], [spout_reach + 1, z0 - 1],
+                [spout_reach + 1, gutter_top(spout_reach + 1)], [xg0 - 1, gutter_top(xg0 - 1)]]);
+        }
+        // Channel, falling toward the spout end.
+        hull() {
+            translate([x_in, wall_t, floor0]) cube([chan_w, spout_out_w - wall_t, big]);
+            translate([x_in, gutter_len - wall_t - 0.01, gutter_floor(gutter_len - wall_t)]) cube([chan_w, 0.01, big]);
+        }
+        // Spout, falling out over the bowl.
+        hull() {
+            translate([x_in, wall_t, floor0]) cube([0.01, chan_w, big]);
+            translate([spout_reach + 1, wall_t, spout_floor(spout_reach + 1)]) cube([0.01, chan_w, big]);
+        }
+    }
+}
+
+// Sill, strip, bowl rim and tap, for previews only.
+module context() {
+    translate([-sill_depth, 0, z0]) cube([sill_depth, sill_length, riser_drop]);       // sill
+    translate([0, 0, z0 - 2]) cube([strip_width, sill_length, 2]);                      // steel strip
+    translate([strip_width, 0, z0 - 2]) cube([4, tap_y - tap_base_d / 2 - 10, 2 + rim_h]); // left bowl rim
+    translate([strip_width + 4, tap_y - tap_base_d / 2 - 10, z0 - 2])
+        cube([80, sill_length - tap_y + tap_base_d / 2 + 10, 2]);                       // deck right of the bowl
+    translate([tap_gap + tap_base_d / 2, tap_y, z0]) {
         cylinder(d = tap_base_d, h = tap_base_h, $fn = 72);
-        cylinder(d = tap_neck_d, h = 180, $fn = 72);
+        cylinder(d = tap_pillar_d, h = 150, $fn = 72);
     }
 }
 
-module installed(sec) {
-    if (sec == "left") children();
-    else mirror([0, 1, 0]) children();
+function p_len(p) = p == "plate" ? plate_len : p == "apron" ? apron_len : gutter_len;
+function p_segs(p) = p == "plate" ? plate_segments : p == "apron" ? apron_segments : 1;
+function p_y(p) = p == "gutter" ? yg0 : clearance;
+
+module body(p) {
+    if (p == "plate") plate();
+    else if (p == "apron") apron();
+    else gutter();
 }
 
-module piece(sec, seg) {
-    print_cut(sec_len(sec), test_slice, sec_segs(sec), seg) part(sec);
+module cut(p, seg) {
+    print_cut(p_len(p), test_slice, p_segs(p), seg) body(p);
 }
 
-// One piece laid for printing. The spout piece stands on its junction end
-// (the spout then rises at 45°+); every other piece lies on its skirt face,
-// with the lip and skirt flat on the bed. A piece longer than the bed goes
-// on the diagonal.
-module print_piece(sec, seg) {
-    len = sec_len(sec);
-    segs = sec_segs(sec);
-    y0 = seg < 0 ? 0 : len / segs * seg;
-    plen = test_slice > 0 ? test_slice : seg < 0 ? len : len / segs;
-    if (sec == "left" && y0 == 0) {
-        translate([0, 0, -y0]) rotate([90, 0, 0]) piece(sec, seg);
-    } else {
-        rotate([0, 0, plen > bed ? 45 : 0]) translate([0, -y0 - plen / 2, -xf]) rotate([0, -90, 0])
-            mirror([0, sec == "right" ? 1 : 0, 0]) translate([0, sec == "right" ? -2 * y0 - plen : 0, 0])
-                piece(sec, seg);
+// One piece on the bed. Plate: flat side down. Apron: on the face against
+// the riser. Gutter: upside down on its wall tops, which share one plane.
+// A piece longer than the bed is turned to fit (diag_angle).
+module print_piece(p, seg) {
+    segs = p_segs(p);
+    y0 = test_slice > 0 || seg < 0 ? 0 : p_len(p) / segs * seg;
+    plen = test_slice > 0 ? test_slice : seg < 0 ? p_len(p) : p_len(p) / segs;
+    rotate([0, 0, plen > bed - 5 ? diag_angle : 0]) translate([0, -plen / 2, 0]) {
+        if (p == "plate") translate([0, -y0, 0]) cut(p, seg);
+        else if (p == "apron") translate([0, -y0, -xg0]) rotate([0, -90, 0]) cut(p, seg);
+        else translate([0, 0, -cos(spout_fall)]) rotate([0, spout_fall, 0]) rotate([180, 0, 0])
+            translate([0, -plen, 0]) cut(p, seg);
     }
 }
 
-secs = section == "both" ? ["left", "right"] : [section];
+pieces = piece == "all" ? ["plate", "apron", "gutter"] : [piece];
 
 if (orient == "print") {
-    for (i = [0 : len(secs) - 1]) translate([i * 300, 0, 0]) {
-        s = secs[i];
-        if (segment >= 0 || test_slice > 0) print_piece(s, max(segment, 0));
-        else for (j = [0 : sec_segs(s) - 1]) translate([0, j * 260, 0]) print_piece(s, j);
+    for (i = [0 : len(pieces) - 1]) translate([i * 300, 0, 0]) {
+        p = pieces[i];
+        if (segment >= 0 || test_slice > 0 || p_segs(p) == 1) print_piece(p, segment);
+        else for (j = [0 : p_segs(p) - 1]) translate([j * 150, 0, 0]) print_piece(p, j);
     }
 } else {
     %context();
-    for (s = secs) installed(s) piece(s, segment);
+    for (p = pieces) translate([0, p_y(p), 0]) cut(p, segment);
 }
