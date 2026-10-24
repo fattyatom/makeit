@@ -409,13 +409,19 @@ textarea.in { resize: vertical; min-height: 84px; line-height: 1.5; }
     if (!s?.id) {
       box.innerHTML = `<h2>Hand it to Claude</h2>
         <p class="hint">Starts a Claude Code session on the makeit repo. Claude reads this page, asks about anything missing, and posts previews and files back here.</p>
-        <div class="actions"><button class="btn primary" type="button" id="startBtn">Start design session</button></div>
-        <div class="status-line" id="startStatus"></div>`;
+        <div class="actions">
+          <button class="btn primary" type="button" id="startBtn">Start design session</button>
+          <button class="btn" type="button" id="copyBtn">Copy session prompt</button>
+          <a class="btn quiet" href="https://claude.ai/code" target="_blank" rel="noopener">Open Claude Code ↗</a>
+        </div>
+        <p class="hint">No Start button access? Copy the prompt, open Claude Code, start a session on the <b>makeit</b> repo and paste it in.</p>
+        <div class="status-line" id="startStatus"></div>
+        <textarea id="promptOut" class="in" readonly hidden aria-label="Session prompt" style="min-height:140px;font:12.5px/1.5 var(--mono)"></textarea>`;
       $("#startBtn").addEventListener("click", startSession);
+      $("#copyBtn").addEventListener("click", copyPrompt);
       if (!mcp) {
         $("#startBtn").disabled = true;
-        $("#startStatus").textContent = `${CCR} isn't available to this page yet. In claude.ai, turn it on in the page's permissions.`;
-        offerPermissions($("#startStatus"));
+        $("#startStatus").textContent = "Starting sessions from this page isn't available here. Use Copy session prompt instead.";
       }
       return;
     }
@@ -546,7 +552,7 @@ textarea.in { resize: vertical; min-height: 84px; line-height: 1.5; }
       case "selection_required": return `Choose which ${CCR} connector this page should use when claude.ai asks, then try again.`;
       case "approval_required": return `This page needs your approval to ${action}. Press the button again and allow it when claude.ai asks.`;
       case "not_in_manifest": return `${CCR} is turned off for this page. Turn it on from the page's Permissions menu.`;
-      case "blocked_by_policy": return `Your organization blocks ${CCR} here.`;
+      case "blocked_by_policy": return `${CCR} is blocked for pages on your account. Use Copy session prompt and paste it into Claude Code instead.`;
       case "tool_error": return `${CCR} refused: ${e.message || "no reason given"}`;
       case "server_unavailable": case "upstream_error":
         return action === "read the session" ? "Couldn't reach Claude Code just now. Try again in a moment."
@@ -589,6 +595,41 @@ textarea.in { resize: vertical; min-height: 84px; line-height: 1.5; }
     return `Purpose:\n${d.purpose || "(not written yet)"}\n\nMeasurements:\n${ms}\n\nInputs:\n${ins}\n\nPrinting: bed ${d.constraints?.bed || "?"}, ${d.constraints?.material || "PETG"}. ${d.constraints?.notes || ""}`;
   }
 
+  function buildPrompt(p, slug) {
+    const d = { ...p.data, ...draft };
+    return `Design the part "${draft.name.trim()}" requested from my makeit page.
+
+Follow .claude/skills/make-part/SKILL.md in this repo.
+- Artifact: ${ARTIFACT_URL}
+- Part id: ${p.id} (db collection "parts")
+- Project folder: projects/${slug}
+
+The page record is the source of truth. A copy of the brief as of now:
+
+${briefText(d)}`;
+  }
+
+  async function copyPrompt() {
+    flushSave();
+    const p = partById(selectedId); if (!p) return;
+    const st = $("#startStatus"), out = $("#promptOut");
+    const say = (t, cls = "") => { st.textContent = t; st.className = "status-line " + cls; };
+    if (!(draft.name.trim() && draft.purpose.trim())) { say("Give the part a name and say what it's for first.", "err"); return; }
+    const slug = p.data.slug || slugify(draft.name);
+    const prompt = buildPrompt(p, slug);
+    out.value = prompt; out.hidden = false;
+    try {
+      await navigator.clipboard.writeText(prompt);
+      say("Copied. Open Claude Code, start a session on the makeit repo, and paste it in.", "ok");
+    } catch {
+      out.focus(); out.select();
+      say("Select the prompt below and copy it, then paste it into a Claude Code session on the makeit repo.");
+    }
+    if (!p.data.slug && db) {
+      writeChain = writeChain.then(() => db.doc("parts/" + p.id).update({ slug, updatedAt: new Date().toISOString() })).catch(() => {});
+    }
+  }
+
   async function startSession() {
     flushSave();
     const p = partById(selectedId); if (!p) return;
@@ -605,17 +646,7 @@ textarea.in { resize: vertical; min-height: 84px; line-height: 1.5; }
       if (!env?.environment_id) { say("No active Claude Code environment found. Create one at claude.ai/code first.", "err"); btn.disabled = false; return; }
 
       say("Starting the session…");
-      const d = { ...p.data, ...draft };
-      const prompt = `Design the part "${draft.name.trim()}" requested from my makeit page.
-
-Follow .claude/skills/make-part/SKILL.md in this repo.
-- Artifact: ${ARTIFACT_URL}
-- Part id: ${p.id} (db collection "parts")
-- Project folder: projects/${slug}
-
-The page record is the source of truth. A copy of the brief as of now:
-
-${briefText(d)}`;
+      const prompt = buildPrompt(p, slug);
       const res = await mcp.callTool(CCR, "create_session", {
         environment_id: env.environment_id, source_url: REPO_URL, title: `makeit: ${draft.name.trim()}`.slice(0, 120), prompt,
       }, { cache: false });
