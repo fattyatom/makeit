@@ -412,7 +412,11 @@ textarea.in { resize: vertical; min-height: 84px; line-height: 1.5; }
         <div class="actions"><button class="btn primary" type="button" id="startBtn">Start design session</button></div>
         <div class="status-line" id="startStatus"></div>`;
       $("#startBtn").addEventListener("click", startSession);
-      if (!mcp) { $("#startBtn").disabled = true; $("#startStatus").textContent = "Starting sessions works when this page is open in claude.ai."; }
+      if (!mcp) {
+        $("#startBtn").disabled = true;
+        $("#startStatus").textContent = `${CCR} isn't available to this page yet. In claude.ai, turn it on in the page's permissions.`;
+        offerPermissions($("#startStatus"));
+      }
       return;
     }
     const fb = (d.feedback || []).slice(-5);
@@ -431,7 +435,11 @@ textarea.in { resize: vertical; min-height: 84px; line-height: 1.5; }
     $("#fbText").value = typed;
     $("#fbSend").addEventListener("click", sendFeedback);
     $("#sessCheck").addEventListener("click", checkSession);
-    if (!mcp) { $("#fbSend").disabled = $("#sessCheck").disabled = true; $("#fbStatus").textContent = "Sending works when this page is open in claude.ai."; }
+    if (!mcp) {
+      $("#fbSend").disabled = $("#sessCheck").disabled = true;
+      $("#fbStatus").textContent = `${CCR} isn't available to this page yet. In claude.ai, turn it on in the page's permissions.`;
+      offerPermissions($("#fbStatus"));
+    }
   }
 
   // ---------- saving ----------
@@ -547,6 +555,33 @@ textarea.in { resize: vertical; min-height: 84px; line-height: 1.5; }
     }
   }
 
+  // Codes a viewer can clear from the page's Permissions panel.
+  const PERMISSION_CODES = ["not_in_manifest", "approval_required", "not_granted", "capability_disabled"];
+
+  function fail(e, action, el) {
+    if (!el) return;
+    el.className = "status-line err";
+    el.textContent = mcpError(e, action) + (e?.code ? ` [${e.code}]` : "");
+    if (PERMISSION_CODES.includes(e?.code)) offerPermissions(el);
+  }
+
+  async function offerPermissions(el) {
+    const perms = window.claude?.use ? await window.claude.use("permissions").catch(() => null) : null;
+    if (!perms || !el || el.querySelector("button")) return;
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "btn small"; b.textContent = "Open page permissions";
+    b.addEventListener("click", async () => {
+      try {
+        await perms.manage();
+        el.className = "status-line";
+        el.textContent = "If you turned Claude Code Remote on, reload the page and try again.";
+      } catch {
+        el.textContent = "Open the page's menu, choose Permissions, and turn on Claude Code Remote.";
+      }
+    });
+    el.append(" ", b);
+  }
+
   function briefText(d) {
     const ms = (d.measurements || []).filter((m) => m.name || m.value)
       .map((m) => `- ${m.name || "?"}: ${m.value === "" ? "?" : m.value} mm (${m.source}${m.notes ? "; " + m.notes : ""})`).join("\n") || "- none given yet";
@@ -590,7 +625,7 @@ ${briefText(d)}`;
       writeChain = writeChain.then(() => db.doc("parts/" + p.id).update({ status: "queued", slug, session, updatedAt: session.startedAt }))
         .catch((e) => say(saveError(e), "err"));
       await writeChain;
-    } catch (e) { say(mcpError(e, "start a session"), "err"); btn.disabled = false; }
+    } catch (e) { fail(e, "start a session", $("#startStatus")); btn.disabled = false; }
   }
 
   async function sendFeedback() {
@@ -609,7 +644,7 @@ ${briefText(d)}`;
       await writeChain;
       $("#fbText").value = "";
       say("Sent. Claude picks it up in the session.", "ok");
-    } catch (e) { say(mcpError(e, "send to the session"), "err"); btn.disabled = false; }
+    } catch (e) { fail(e, "send to the session", $("#fbStatus")); btn.disabled = false; }
   }
 
   async function checkSession() {
@@ -621,7 +656,7 @@ ${briefText(d)}`;
       const bucket = String(s.status_bucket || s.session_status || "").replace(/^SESSION_STATUS_(BUCKET_)?/, "").toLowerCase().replace(/_/g, " ");
       out.textContent = `${p.data.session.id} · ${bucket || "unknown state"}`;
       st.textContent = ""; st.className = "status-line";
-    } catch (e) { st.textContent = mcpError(e, "read the session"); st.className = "status-line err"; }
+    } catch (e) { fail(e, "read the session", st); }
   }
 
   async function downloadStl(d) {
