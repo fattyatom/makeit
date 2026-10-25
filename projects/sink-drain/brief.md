@@ -10,10 +10,11 @@ In the photo, green is the part that sits on the window sill, red is the
 apron down to the sink, sloped toward the drainage point. Diagonals inside
 each shape show the fall from the corners to the lowest point.
 
-Design (v4; v3 plus the round-5 changes below):
+Design (v5; v4 made print-friendly, see the fit log):
 - **Plate** (3 pieces, 210 mm each): ribbed cover on the sill, styled on
-  `Sink_Drain_v3.stl`. Falls 10 mm toward the sink, 8 mm nose with a drip
-  groove, end walls at the wall and mullion ends. Joins on rib centres with
+  `Sink_Drain_v3.stl`. Rib tops are level (0°) so things stand on them;
+  the grooves fall 10 mm toward the sink. 8 mm nose with a 45° V drip
+  groove, teardrop pin holes, end walls at the wall and mullion ends. Joins on rib centres with
   1.75 mm filament pins.
 - **Channels** cover the whole 40 mm strip on both sides: back wall under
   the plate's nose, front wall just behind the bowl rim, and a flange over
@@ -73,3 +74,4 @@ Hand measurements win over the scan. Note which is which.
 | 2026-10-24 | v2 | not yet | Plate x3 + apron x2 released, test slice `print/sink-drain-v2-test-slice.stl`; gutter waits on tap measurements |
 | 2026-10-24 | v3 | not yet | Full-width channels both sides into one spout, spigot joins, end walls, tap from sketch. Test slice `print/sink-drain-v3-test-slice.stl`. v2 files withdrawn. |
 | 2026-10-25 | v4 | not yet | Spout narrowed (it ran 2 mm into the tap at 395); added the two-piece plinth round the tap base. v3 files withdrawn. |
+| 2026-10-25 | v5 | not yet | Level rib tops (user: things must sit on the sill), V drip groove and teardrop pin holes so the plate has no overhangs. Channels unchanged: their floors print as bridges (36 mm, 10 mm at the spout). Four bed 3MFs + one with every piece (`beds.py`). v4 files withdrawn. |

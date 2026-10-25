@@ -37,8 +37,8 @@ plate_min = 3;         // floor thickness at the nose
 nose = 8;              // plate overhang past the sill edge
 rib_count = 30;        // ribs along the plate (one more than this, ends included)
 rib_fill = 0.5;        // rib width / pitch (reference STL: 10 mm ribs, 10 mm grooves)
-rib_h = 4;             // above the groove floor
-end_wall_h = 4;        // plate end walls, above the rib tops
+rib_h = 4;             // above the groove floor at the back; rib tops are level
+end_wall_h = 4;        // plate end walls, above the rib tops (level)
 drip_w = 2;            // groove under the nose so drips let go at the edge
 drip_d = 1.2;
 wall_t = 1.6;
@@ -87,6 +87,8 @@ xb = -(sill_depth - clearance);      // back edge, at the window frame
 plate_fall = atan(plate_rise / (nose - xb));
 function plate_top(x) = plate_min + (nose - x) * tan(plate_fall);
 pitch = plate_len / rib_count;
+// Rib tops are level (0°) so things stand on them; the grooves between still fall.
+rib_top = plate_top(xb) + rib_h;
 plate_pin_xs = [-100, -55, -15];
 plate_pin_z = 4.5;
 
@@ -131,7 +133,7 @@ function plinth_top(x, y) = pl_z0 + y * pl_ty + (x - plinth_back) * pl_tx;
 pl_hole = tap_body_d / 2 + 0.7;
 
 assert(rib_count % plate_segments == 0, "plate joins must land on rib centres");
-assert(plate_pin_z - pin_hole / 2 >= 1.2 && plate_top(-15) + rib_h - plate_pin_z - pin_hole / 2 >= 1.2,
+assert(plate_pin_z - pin_hole / 2 >= 1.2 && rib_top - plate_pin_z - pin_hole / 2 >= 1.2,
        "plate pin holes leave walls under 1.2 mm");
 assert(nose + tap_room <= tap_gap && xfl + tap_room <= tap_gap, "channel or plate reaches the tap");
 assert(spout_y + spout_w_out + tap_room <= tap_y - tap_base_d / 2, "spout hits the tap base");
@@ -144,9 +146,12 @@ module extrude_y(len) {
     translate([0, len, 0]) rotate([90, 0, 0]) linear_extrude(len) children();
 }
 
+// Pin holes along y, teardrop-shaped (point up) so they print without
+// overhang with the plate flat on the bed.
 module pins_at(y, xs, z) {
-    for (x = xs) translate([x, y, z]) rotate([90, 0, 0])
-        cylinder(d = pin_hole, h = 2 * (pin_len + 0.5), center = true, $fn = 24);
+    r = pin_hole / 2;
+    for (x = xs) translate([x, y, z]) rotate([90, 0, 0]) linear_extrude(2 * (pin_len + 0.5), center = true)
+        hull() { circle(r = r, $fn = 24); translate([0, r * sqrt(2) - 0.01]) square(0.02, center = true); }
 }
 
 module plate() {
@@ -159,14 +164,17 @@ module plate() {
             // grooves empty across the plain nose.
             intersection() {
                 for (k = [1 : rib_count - 1]) translate([0, k * pitch - rw / 2, 0]) extrude_y(rw)
-                    polygon([[xb, 0], [0, 0], [0, plate_top(0) + rib_h], [xb, plate_top(xb) + rib_h]]);
+                    polygon([[xb, 0], [0, 0], [0, rib_top], [xb, rib_top]]);
                 translate([xb - 1, 0, -1]) cube([nose - xb + 2, plate_len, 100]);
             }
             // End walls, so nothing runs off the ends.
             for (y = [0, plate_len - ew]) translate([0, y, 0]) extrude_y(ew) polygon([
-                [xb, 0], [nose, 0], [nose, plate_top(nose) + end_wall_h], [xb, plate_top(xb) + rib_h + end_wall_h]]);
+                [xb, 0], [nose, 0], [nose, rib_top + end_wall_h], [xb, rib_top + end_wall_h]]);
         }
-        translate([nose - 3 - drip_w, -1, -1]) cube([drip_w, plate_len + 2, drip_d + 1]);
+        // Drip groove: a 45° V, so its roof needs no bridging.
+        gx = nose - 3 - drip_w / 2;
+        translate([0, -1, 0]) extrude_y(plate_len + 2)
+            polygon([[gx - drip_d - 1, -1], [gx + drip_d + 1, -1], [gx, drip_d]]);
         for (j = [1 : plate_segments - 1]) pins_at(plate_len / plate_segments * j, plate_pin_xs, plate_pin_z);
     }
 }
