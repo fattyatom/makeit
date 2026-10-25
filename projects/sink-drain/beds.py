@@ -8,7 +8,7 @@ import trimesh
 BED, GAP = 255.0, 6.0
 OUT = Path(__file__).parent / "out"
 PRINT = Path(__file__).parent / "print"
-VERSION = sys.argv[1] if len(sys.argv) > 1 else "v5"
+VERSION = sys.argv[1] if len(sys.argv) > 1 else "v6"
 
 # Each bed: pieces placed left to right; a [list] is a column stacked front to back.
 BEDS = [
@@ -18,7 +18,7 @@ BEDS = [
     ["right--1"],
 ]
 NAMES = {"plate-0": "plate-1", "plate-1": "plate-2", "plate-2": "plate-3",
-         "left-0": "left-spout-end", "left-1": "left-wall-end", "right--1": "right-with-spout",
+         "left-0": "apron-spout-end", "left-1": "apron-wall-end", "right--1": "right-with-spout",
          "plinth-0": "plinth-back", "plinth-1": "plinth-front"}
 
 

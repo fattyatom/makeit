@@ -10,30 +10,26 @@ In the photo, green is the part that sits on the window sill, red is the
 apron down to the sink, sloped toward the drainage point. Diagonals inside
 each shape show the fall from the corners to the lowest point.
 
-Design (v5; v4 made print-friendly, see the fit log):
+Design (v6, simplified, option B; 8 pieces on 4 beds):
 - **Plate** (3 pieces, 210 mm each): ribbed cover on the sill, styled on
-  `Sink_Drain_v3.stl`. Rib tops are level (0°) so things stand on them;
-  the grooves fall 10 mm toward the sink. 8 mm nose with a 45° V drip
-  groove, teardrop pin holes, end walls at the wall and mullion ends. Joins on rib centres with
-  1.75 mm filament pins.
-- **Channels** cover the whole 40 mm strip on both sides: back wall under
-  the plate's nose, front wall just behind the bowl rim, and a flange over
-  the rim. Floors fall 1.2° toward the spout. Closed ends at the wall and
-  the mullion. Hollow underneath; printed upside down on their wall tops.
-- **Left** (2 pieces, wall end and spout end) and **right** (1 piece,
-  includes the collector and spout). Each join is spigot-in-socket: the
-  upstream end narrows and sits inside the next piece above a 2.5 mm
-  ridge, so water drops onto the next floor and never reaches the seam.
-- **Spout**: left edge at 380 mm, 10.4 mm wide inside (13.6 outside, so it
-  clears the tap at 395), reaches 100 mm out from the sill face beside the
-  tap, falls 2°, clears the 3 mm rim.
+  `Sink_Drain_v3.stl`. Rib tops level (0°) so things stand on them; grooves
+  fall 10 mm toward the sink. 8 mm nose with a 45° V drip groove, end walls
+  at the wall and mullion. Joins just butt (no pins).
+- **Left aprons** (2 pieces, 190 mm each): cover the 40 mm strip from the
+  wall to the spout and tip water straight into the left bowl: top falls 5°
+  forward, front edge 6 mm past the bowl edge, underside lifts over the rim
+  at 45°. Back upstand stops 1 mm under the plate's nose. End wall at the
+  wall end. Solid, print flat with no overhangs or bridges.
+- **Right piece** (1): channel on the strip from the mullion to the spout,
+  floor falls 1.2° toward it, flange over the strip edge, closed both ends.
+  Spout: left edge at 380 mm, 10.4 mm wide inside, reaches 100 mm out beside
+  the tap, falls 2°, clears the 3 mm rim. Prints upside down; the floors
+  print as bridges (36 mm channel, 10 mm spout).
 - **Plinth** (2 halves, back and front, split through the tap centre so
-  they can go on round the tap body): covers the tap base and the steel
-  round it, from over the channel to 5 mm in front of and 10 mm right of
-  the base. Top sits about at sill height, falls 3° toward the spout and
-  1.5° toward the channel, and drips into both. Rests on the channel
-  flange, the spout wall and the tap's base flange. The front half laps
-  6 mm over the back half.
+  they go on round the tap body): covers the tap base and the steel round
+  it. Top falls toward the spout and the channel. Rests on the channel
+  flange, the spout wall and the tap's base flange; the front half laps 6 mm
+  over the back half. (A one-piece C would leave a gap at the tap.)
 
 ## Inputs (in `inputs/`)
 | File | What it is |
@@ -75,3 +71,4 @@ Hand measurements win over the scan. Note which is which.
 | 2026-10-24 | v3 | not yet | Full-width channels both sides into one spout, spigot joins, end walls, tap from sketch. Test slice `print/sink-drain-v3-test-slice.stl`. v2 files withdrawn. |
 | 2026-10-25 | v4 | not yet | Spout narrowed (it ran 2 mm into the tap at 395); added the two-piece plinth round the tap base. v3 files withdrawn. |
 | 2026-10-25 | v5 | not yet | Level rib tops (user: things must sit on the sill), V drip groove and teardrop pin holes so the plate has no overhangs. Channels unchanged: their floors print as bridges (36 mm, 10 mm at the spout). Four bed 3MFs + one with every piece (`beds.py`). v4 files withdrawn. |
+| 2026-10-25 | v6 | not yet | Simplified (option B): left channels and spigot joins replaced by two forward-falling aprons into the bowl, plate pins dropped, collector closed on the left. Plinth kept in two halves. v5 files withdrawn. |
