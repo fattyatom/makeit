@@ -21,15 +21,44 @@ BEDS = [
     ["plate-0", "left-1"],
     ["plate-1", "left-0"],
     ["plate-2", ["plinth-0", "plinth-1"]],
-    ["right--1"],
+    ["right--1@57"],   # turned 57° so it fits with its 5 mm brim
 ]
+# PETG process settings, written per object (Bambu Studio / Orca read these
+# as object overrides). Every piece: 0.2 mm layers, 3 walls, 15 % gyroid,
+# no supports (nothing needs them).
+COMMON = {"layer_height": "0.2", "wall_loops": "3", "top_shell_layers": "5", "bottom_shell_layers": "4",
+          "sparse_infill_density": "15%", "sparse_infill_pattern": "gyroid", "enable_support": "0",
+          "seam_position": "aligned"}
+SETTINGS = {
+    # Big flat footprint: no brim needed.
+    "plate": {"brim_type": "no_brim"},
+    # Long solid wedge: a small brim stops the ends lifting.
+    "left": {"brim_type": "outer_only", "brim_width": "3"},
+    # Stands on its thin wall tops, and the channel floor is a 36 mm bridge.
+    "right": {"brim_type": "outer_only", "brim_width": "5", "thick_bridges": "1", "bridge_speed": "25",
+              "bridge_flow": "0.95"},
+    # Stands on its top plate.
+    "plinth": {"brim_type": "outer_only", "brim_width": "3"},
+}
+# Filament settings live in the filament preset, not per object, so they go
+# in the project description.
+DESCRIPTION = ("PETG. Nozzle 240 C (245 C first layer), bed 75 C on textured PEI (use glue stick on smooth PEI), "
+               "part fan 30-40 %, overhang/bridge fan 90 %, max volumetric speed 12 mm3/s, "
+               "dry the filament (65 C, 4-6 h) if it has been open. Per-object process settings are set in this file: "
+               "0.2 mm layers, 3 walls, 5 top / 4 bottom layers, 15 % gyroid, no supports; brims on the aprons, "
+               "plinth halves and the right piece; thick bridges at 25 mm/s on the right piece.")
+
 NAMES = {"plate-0": "plate-1", "plate-1": "plate-2", "plate-2": "plate-3",
          "left-0": "apron-spout-end", "left-1": "apron-wall-end", "right--1": "right-with-spout",
          "plinth-0": "plinth-back", "plinth-1": "plinth-front"}
 
 
 def load(key):
+    """key, optionally with @degrees to turn the piece about z."""
+    key, _, turn = key.partition("@")
     m = trimesh.load(OUT / f"model-{key}.stl")
+    if turn:
+        m.apply_transform(trimesh.transformations.rotation_matrix(math.radians(float(turn)), [0, 0, 1]))
     m.apply_translation(-m.bounds[0])
     return m
 
@@ -38,7 +67,7 @@ def layout(bed):
     placed, x = [], 0.0
     for col in bed:
         col = col if isinstance(col, list) else [col]
-        meshes = [(k, load(k)) for k in col]
+        meshes = [(k.partition("@")[0], load(k)) for k in col]
         w = max(m.extents[0] for _, m in meshes)
         y = 0.0
         for k, m in meshes:
@@ -49,7 +78,8 @@ def layout(bed):
     # Centre the group on the bed and check it fits.
     lo = min(m.bounds[0][0] for _, m in placed), min(m.bounds[0][1] for _, m in placed)
     hi = max(m.bounds[1][0] for _, m in placed), max(m.bounds[1][1] for _, m in placed)
-    assert hi[0] - lo[0] <= BED and hi[1] - lo[1] <= BED, f"bed overflows: {hi[0] - lo[0]:.1f} x {hi[1] - lo[1]:.1f}"
+    # Room for a 5 mm brim all round.
+    assert hi[0] - lo[0] <= BED - 10 and hi[1] - lo[1] <= BED - 10, f"bed overflows: {hi[0] - lo[0]:.1f} x {hi[1] - lo[1]:.1f}"
     shift = [(BED - (hi[0] - lo[0])) / 2 - lo[0], (BED - (hi[1] - lo[1])) / 2 - lo[1], 0]
     for _, m in placed:
         m.apply_translation(shift)
@@ -75,8 +105,10 @@ def write_project(path, plates):
             oid += 1
             objects.append(f'<object id="{oid}" type="model" name="{name}">{_mesh_xml(m)}</object>')
             items.append(f'<item objectid="{oid}" transform="1 0 0 0 1 0 0 0 1 {ox:.3f} {oy:.3f} 0" printable="1"/>')
+            kind = next(k for k in SETTINGS if f"-{k}" in name or (k == "left" and "-apron" in name))
+            opts = "".join(f'<metadata key="{k}" value="{v}"/>' for k, v in {**COMMON, **SETTINGS[kind]}.items())
             settings.append(f'<object id="{oid}"><metadata key="name" value="{name}"/>'
-                            f'<metadata key="extruder" value="1"/>'
+                            f'<metadata key="extruder" value="1"/>{opts}'
                             f'<part id="1" subtype="normal_part"><metadata key="name" value="{name}"/></part></object>')
             inst.append(f'<model_instance><metadata key="object_id" value="{oid}"/>'
                         f'<metadata key="instance_id" value="0"/><metadata key="identify_id" value="{100 + oid}"/></model_instance>')
@@ -87,6 +119,8 @@ def write_project(path, plates):
              'xmlns:BambuStudio="http://schemas.bambulab.com/package/2021">'
              '<metadata name="Application">BambuStudio-01.10.02.76</metadata>'
              '<metadata name="BambuStudio:3mfVersion">1</metadata>'
+             f'<metadata name="Title">Sink drain {VERSION}</metadata>'
+             f'<metadata name="Description">{DESCRIPTION}</metadata>'
              f'<resources>{"".join(objects)}</resources><build>{"".join(items)}</build></model>')
     config = f'<?xml version="1.0" encoding="UTF-8"?>\n<config>{"".join(settings)}{"".join(plate_cfg)}</config>'
     types = ('<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'

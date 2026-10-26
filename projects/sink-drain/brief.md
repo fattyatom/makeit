@@ -58,7 +58,10 @@ Hand measurements win over the scan. Note which is which.
 
 ## Constraints
 - Printer / bed size: 255 x 255 x 255 (user)
-- Material: PETG
+- Material: PETG. Filament: 240 °C (245 first layer), bed 75 °C textured PEI (glue on smooth),
+  fan 30-40 %, bridges/overhangs 90 %, max 12 mm³/s, dry if opened.
+  Process (written per object into the 3MFs): 0.2 mm layers, 3 walls, 5/4 top/bottom, 15 % gyroid,
+  no supports; 3 mm brim on aprons and plinth, 5 mm brim + thick bridges at 25 mm/s on the right piece.
 - Sits loose (user). Must clear the tap.
 - No water past the outer ends; cover the strip and surrounds as much as possible (user).
 
@@ -73,3 +76,4 @@ Hand measurements win over the scan. Note which is which.
 | 2026-10-25 | v5 | not yet | Level rib tops (user: things must sit on the sill), V drip groove and teardrop pin holes so the plate has no overhangs. Channels unchanged: their floors print as bridges (36 mm, 10 mm at the spout). Four bed 3MFs + one with every piece (`beds.py`). v4 files withdrawn. |
 | 2026-10-25 | v6 | not yet | Simplified (option B): left channels and spigot joins replaced by two forward-falling aprons into the bowl, plate pins dropped, collector closed on the left. Plinth kept in two halves. v5 files withdrawn. |
 | 2026-10-26 | v7 | not yet | User saw an overhang on the left bottom piece: apron underside lift and plate drip groove steepened from 45° to 60°; nothing in the plate, aprons or plinth now faces down more than 33° from vertical. `all-beds` 3MF is now a Bambu Studio / Orca project with one plate per bed. v6 files withdrawn. |
+| 2026-10-26 | v7 | not yet | PETG settings added to the 3MFs: per-object process overrides, filament settings in the project description. Bed 4 turned 57° so the right piece fits with its brim. |
