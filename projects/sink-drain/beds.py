@@ -32,7 +32,7 @@ COMMON = {"layer_height": "0.2", "wall_loops": "3", "top_shell_layers": "5", "bo
 SETTINGS = {
     # Big flat footprint: no brim needed.
     "plate": {"brim_type": "no_brim"},
-    # Long solid wedge: a small brim stops the ends lifting.
+    # Long solid block: a small brim stops the ends lifting.
     "left": {"brim_type": "outer_only", "brim_width": "3"},
     # Stands on its thin wall tops, and the channel floor is a 36 mm bridge.
     "right": {"brim_type": "outer_only", "brim_width": "5", "thick_bridges": "1", "bridge_speed": "25",
@@ -51,7 +51,7 @@ DESCRIPTION = ("PETG. Nozzle 240 C (245 C first layer), bed 75 C on textured PEI
 NAMES = {"plate-0": "plate-1", "plate-1": "plate-2", "plate-2": "plate-3",
          "left-0": "apron-spout-end", "left-1": "apron-wall-end", "right--1": "right-with-spout",
          "plinth-0": "plinth-back", "plinth-1": "plinth-front",
-         "ts-plate": "test-plate", "ts-left": "test-apron"}
+         "ts-left": "test-apron-spout-end", "ts-right": "test-right-spout-end"}
 
 
 def load(key):
@@ -148,8 +148,9 @@ for i, bed in enumerate(BEDS, 1):
     print(f"bed {i}: {', '.join(NAMES[k] for k, _ in placed)}  ({size[0]:.0f} x {size[1]:.0f} mm) -> {path.name}")
 write_project(PRINT / f"sink-drain-{VERSION}-all-beds.3mf", plates)
 
-# Test slices (30 mm of the plate and of an apron) on one bed, same settings.
-placed, size = layout([["ts-plate"], ["ts-left"]])
+# Test slices of the spout end (30 mm of the apron with its tongue, and of the
+# right piece with the open collector and the spout) on one bed, same settings.
+placed, size = layout([["ts-left"], ["ts-right"]])
 write_project(PRINT / f"sink-drain-{VERSION}-test-slice.3mf", [[(f"sink-drain-{VERSION}-{NAMES[k]}", m) for k, m in placed]])
 print(f"test slice ({size[0]:.0f} x {size[1]:.0f} mm) -> sink-drain-{VERSION}-test-slice.3mf")
 print(f"all, one plate per bed -> sink-drain-{VERSION}-all-beds.3mf")

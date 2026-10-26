@@ -2,9 +2,10 @@
 // into the sink.
 //   plate  - ribbed cover on the sill; level rib tops, grooves falling toward
 //            the sink, drips off its nose just past the sill edge (3 pieces).
-//   left   - apron on the 40 mm steel strip from the left wall to the spout;
-//            falls forward and tips the drips over the rim into the left
-//            bowl along its whole length (2 pieces).
+//   left   - apron filling the 40 mm strip from the left wall to the spout;
+//            its top falls back into a gutter along the riser, and the
+//            gutter falls to the spout. Each piece laps a tongue over the
+//            next one downstream (2 pieces).
 //   right  - channel on the strip from the mullion to the spout, falling
 //            toward it, plus the spout reaching out over the left bowl beside
 //            the tap (1 piece).
@@ -44,9 +45,12 @@ drip_d = 1.2;
 lift_angle = 60;       // apron underside and drip groove sides, from horizontal: no slicer overhang
 wall_t = 1.6;
 floor_t = 1.6;
-apron_over = 6;        // apron front edge past the bowl edge
-apron_t = 2;           // apron thickness at its front edge
-apron_fall = 5;        // apron top, toward the bowl (°)
+apron_fall = 1.5;      // apron gutter, toward the spout (°)
+apron_cross = 4;       // apron top, back toward the riser (°)
+lap = 1.5;             // tongue reaches this far past each joint gap
+lap_t = 1.2;           // tongue thickness at its tip
+apron_end_h = 3;       // apron end wall above its top (keeps under the plate's nose)
+weir = 0.5;            // collector floor rises this much to its open left end
 flange_over = 5;       // right channel's top flange reaches this far past the strip
 flange_t = 2;
 top_tilt = 2;          // channel wall tops and flange fall this much toward the sink (°)
@@ -97,14 +101,6 @@ xfl = strip_width + flange_over;     // flange edge
 // upside down on it.
 function top_z(x) = -1 - x * tan(top_tilt);
 
-// Left aprons: underside flat on the strip, then lifts to clear the rim.
-left_total = spout_y - 2 * clearance;
-left_seg = (left_total - clearance) / 2;
-xa1 = strip_width + apron_over;      // apron front edge, over the bowl
-// Underside lifts at lift_angle from here, clearing the rim at the bowl edge.
-xr0 = strip_width - (rim_h + rim_room) / tan(lift_angle);
-apron_tf = z0 + (xa1 - xr0) * tan(lift_angle) + apron_t;
-function apron_top(x) = apron_tf + (xa1 - x) * tan(apron_fall);
 
 // Spout and collector (part of the right piece), local y from spout_y.
 spout_w_out = chan_w_spout + 2 * wall_t;
@@ -114,6 +110,19 @@ function spout_floor(x) = fc - (x - x_in) * tan(spout_fall);
 fc = z0 + rim_h + rim_room + floor_t + (strip_width + 5 - x_in) * tan(spout_fall);
 right_len = sill_length - clearance - spout_y;
 function chan_floor(f0, y) = f0 + y * tan(gutter_fall);
+
+// Left aprons, solid on the strip from the riser to just behind the rim.
+// Local u runs from a piece's spout end toward the wall. Each piece is
+// lap_step higher than the next one downstream, so its tongue (underside
+// lifting at lift_angle) clears that piece's floor; the spout-end piece
+// clears the collector floor the same way.
+left_total = spout_y - 2 * clearance;
+left_seg = (left_total - clearance) / 2;
+af = tan(apron_fall);
+ac = tan(apron_cross);
+lap_step = clearance + lap * (tan(lift_angle) + af) + lap_t;
+g_end = fc + weir + lap_step;                       // gutter at the spout end
+function apron_floor(seg, x, u) = g_end + (seg * (left_seg + clearance) + u) * af + seg * lap_step + (x - x_in) * ac;
 
 // Plinth round the tap, local y from its left edge (just inside the spout).
 tap_x = tap_gap + tap_base_d / 2;
@@ -133,7 +142,8 @@ assert(nose + tap_room <= tap_gap && xfl + tap_room <= tap_gap, "channel or plat
 assert(spout_y + spout_w_out + tap_room <= tap_y - tap_base_d / 2, "spout hits the tap base");
 assert(spout_reach > xfl + 10, "spout must reach past the bowl edge");
 assert(spout_floor(strip_width + 5) - floor_t >= z0 + rim_h, "spout underside hits the rim");
-assert(apron_top(x_in) <= -2, "apron upstand must stay under the plate's nose");
+assert(apron_floor(1, x_in, left_seg) <= -1 - 3, "apron gutter needs a 3 mm upstand under the plate's nose");
+assert(apron_floor(1, nose + 1, left_seg) + apron_end_h <= -1, "apron end wall reaches the plate's nose");
 
 // Profile in (x, z), extruded along y from 0 to len.
 module extrude_y(len) {
@@ -164,16 +174,29 @@ module plate() {
     }
 }
 
-// Left apron in its own frame: y from 0 (spout end) to len. The upstand
-// stops 1 mm under the plate's nose, which drips onto the apron in front of
-// it; the top falls forward and the front edge overhangs the bowl. The wall
-// end (seg 1) gets an end wall.
+// Solid over x0..x1, y0..y1, between the surfaces z = lo(x, y) and hi(x, y)
+// (planes, so every face is flat).
+module prism(x0, x1, y0, y1, lo, hi) {
+    polyhedron(
+        points = [[x0, y0, lo(x0, y0)], [x1, y0, lo(x1, y0)], [x1, y1, lo(x1, y1)], [x0, y1, lo(x0, y1)],
+                  [x0, y0, hi(x0, y0)], [x1, y0, hi(x1, y0)], [x1, y1, hi(x1, y1)], [x0, y1, hi(x0, y1)]],
+        faces = [[0, 1, 2, 3], [4, 7, 6, 5], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]]);
+}
+
+// Left apron in its own frame: y = u, from 0 (spout end) to left_seg. The
+// upstand stops 1 mm under the plate's nose, which drips into the gutter in
+// front of it. The tongue reaches past the spout end; the wall end (seg 1)
+// gets an end wall.
 module apron(seg) {
-    k = rim_h + rim_room;
-    function prof(dz) = [[xg0, z0], [xr0, z0], [xa1, z0 + (xa1 - xr0) * tan(lift_angle)], [xa1, apron_tf + dz],
-                         [x_in, apron_top(x_in) + dz], [x_in, -1], [xg0, -1]];
-    extrude_y(left_seg) polygon(prof(0));
-    if (seg == 1) translate([0, left_seg - 2, 0]) extrude_y(2) polygon(prof(end_wall_h));
+    top = function(x, u) apron_floor(seg, x, u);
+    flat = function(x, u) z0;
+    // Downstream floor under the tongue: the collector, or the other apron's far end.
+    under = function(x) seg == 0 ? fc + weir : apron_floor(0, x, left_seg);
+    prism(xg0, xf1, 0, left_seg, flat, top);
+    prism(xg0, x_in + 0.01, 0, left_seg, flat, function(x, u) -1);
+    if (seg == 1) prism(xg0, xf1, left_seg - wall_t, left_seg, flat, function(x, u) top(x, u) + apron_end_h);
+    prism(x_in + clearance, seg == 0 ? x_in2 - clearance : xf1, -(clearance + lap), 0.01,
+          function(x, u) under(x) + clearance - (u + clearance) * tan(lift_angle), top);
 }
 
 // Below the channel's wall-top plane.
@@ -214,6 +237,12 @@ module right_piece() {
         hull() {
             translate([x_in, wall_t, fc]) cube([0.01, chan_w_spout, big]);
             translate([spout_reach + 1, wall_t, spout_floor(spout_reach + 1)]) cube([0.01, chan_w_spout, big]);
+        }
+        // Open to the left over the collector for the apron's tongue; the floor
+        // rises weir toward the open end so nothing runs back out.
+        hull() {
+            translate([x_in, wall_t, fc]) cube([x_in2 - x_in, 0.01, big]);
+            translate([x_in, -1, fc + weir * (wall_t + 1) / wall_t]) cube([x_in2 - x_in, 0.01, big]);
         }
         // Pocket under the channel floor, open to the strip, leaving floor_t.
         if (hollow) hull() {
@@ -289,7 +318,9 @@ function p_list(p) = p == "left" || p == "plinth" ? (segment < 0 ? [0, 1] : [seg
 
 module body(p, seg) {
     if (p == "plate") print_cut(plate_len, test_slice, plate_segments, seg) plate();
-    else if (p == "left") print_cut(left_seg, test_slice) apron(seg);
+    // Apron test slice keeps the tongue.
+    else if (p == "left") if (test_slice > 0 && is_undef($section_at)) keep_y(-5, test_slice) apron(seg);
+                          else print_cut(left_seg, 0) apron(seg);
     else if (p == "right") print_cut(right_len, test_slice) right_piece();
     else plinth_half(seg);
 }

@@ -10,18 +10,23 @@ In the photo, green is the part that sits on the window sill, red is the
 apron down to the sink, sloped toward the drainage point. Diagonals inside
 each shape show the fall from the corners to the lowest point.
 
-Design (v7 = v6 with steeper lifts; simplified, option B; 8 pieces on 4 beds):
+Design (v8: aprons now drain sideways to the spout; 8 pieces on 4 beds):
 - **Plate** (3 pieces, 210 mm each): ribbed cover on the sill, styled on
   `Sink_Drain_v3.stl`. Rib tops level (0°) so things stand on them; grooves
   fall 10 mm toward the sink. 8 mm nose with a 60° V drip groove, end walls
   at the wall and mullion. Joins just butt (no pins).
-- **Left aprons** (2 pieces, 190 mm each): cover the 40 mm strip from the
-  wall to the spout and tip water straight into the left bowl: top falls 5°
-  forward, front edge 6 mm past the bowl edge, underside lifts over the rim
-  at 60° (45° showed as an overhang in the user's slicer). Back upstand stops 1 mm under the plate's nose. End wall at the
-  wall end. Solid, print flat with no overhangs or bridges.
+- **Left aprons** (2 pieces, 190 mm each): solid blocks filling the 40 mm
+  strip from the riser to just behind the bowl rim, so no water can sit in
+  the gap. Top falls 4° back into a gutter along the riser; the gutter falls
+  1.5° toward the spout. Each piece is 4.1 mm higher than the next one
+  downstream and laps a 1.5 mm tongue over it (underside lifting at 60°);
+  the spout-end piece laps over the right piece's collector. Back upstand
+  stops 1 mm under the plate's nose; end wall at the wall end. Print flat,
+  no overhangs or bridges.
 - **Right piece** (1): channel on the strip from the mullion to the spout,
-  floor falls 1.2° toward it, flange over the strip edge, closed both ends.
+  floor falls 1.2° toward it, flange over the strip edge, closed at the mullion end and open on the
+  left over the collector for the apron's tongue (floor rises 0.5 mm to
+  that edge so nothing runs back out).
   Spout: left edge at 380 mm, 10.4 mm wide inside, reaches 100 mm out beside
   the tap, falls 2°, clears the 3 mm rim. Prints upside down; the floors
   print as bridges (36 mm channel, 10 mm spout).
@@ -77,3 +82,5 @@ Hand measurements win over the scan. Note which is which.
 | 2026-10-25 | v6 | not yet | Simplified (option B): left channels and spigot joins replaced by two forward-falling aprons into the bowl, plate pins dropped, collector closed on the left. Plinth kept in two halves. v5 files withdrawn. |
 | 2026-10-26 | v7 | not yet | User saw an overhang on the left bottom piece: apron underside lift and plate drip groove steepened from 45° to 60°; nothing in the plate, aprons or plinth now faces down more than 33° from vertical. `all-beds` 3MF is now a Bambu Studio / Orca project with one plate per bed. v6 files withdrawn. |
 | 2026-10-26 | v7 | not yet | PETG settings added to the 3MFs: per-object process overrides, filament settings in the project description. Bed 4 turned 57° so the right piece fits with its brim. |
+| 2026-10-26 | v7 | test slice | Plate slice fits the sill. Apron base width right, but tipping water forward over the rim didn't work and left water in the gap. |
+| 2026-10-26 | v8 | not yet | Aprons rebuilt: solid on the strip to the rim, gutter along the riser falling 1.5° to the spout, tongue laps at each join and into the collector (now open on the left). Test slice is the spout end: 30 mm of the apron and of the right piece. v7 files withdrawn. |
