@@ -50,7 +50,8 @@ DESCRIPTION = ("PETG. Nozzle 240 C (245 C first layer), bed 75 C on textured PEI
 
 NAMES = {"plate-0": "plate-1", "plate-1": "plate-2", "plate-2": "plate-3",
          "left-0": "apron-spout-end", "left-1": "apron-wall-end", "right--1": "right-with-spout",
-         "plinth-0": "plinth-back", "plinth-1": "plinth-front"}
+         "plinth-0": "plinth-back", "plinth-1": "plinth-front",
+         "ts-plate": "test-plate", "ts-left": "test-apron"}
 
 
 def load(key):
@@ -146,4 +147,9 @@ for i, bed in enumerate(BEDS, 1):
     write_project(path, [named])
     print(f"bed {i}: {', '.join(NAMES[k] for k, _ in placed)}  ({size[0]:.0f} x {size[1]:.0f} mm) -> {path.name}")
 write_project(PRINT / f"sink-drain-{VERSION}-all-beds.3mf", plates)
+
+# Test slices (30 mm of the plate and of an apron) on one bed, same settings.
+placed, size = layout([["ts-plate"], ["ts-left"]])
+write_project(PRINT / f"sink-drain-{VERSION}-test-slice.3mf", [[(f"sink-drain-{VERSION}-{NAMES[k]}", m) for k, m in placed]])
+print(f"test slice ({size[0]:.0f} x {size[1]:.0f} mm) -> sink-drain-{VERSION}-test-slice.3mf")
 print(f"all, one plate per bed -> sink-drain-{VERSION}-all-beds.3mf")
