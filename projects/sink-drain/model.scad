@@ -41,6 +41,7 @@ rib_h = 4;             // above the groove floor at the back; rib tops are level
 end_wall_h = 4;        // end walls at the outer ends, above the plate or apron top
 drip_w = 2;            // groove under the nose so drips let go at the edge
 drip_d = 1.2;
+lift_angle = 60;       // apron underside and drip groove sides, from horizontal: no slicer overhang
 wall_t = 1.6;
 floor_t = 1.6;
 apron_over = 6;        // apron front edge past the bowl edge
@@ -96,12 +97,13 @@ xfl = strip_width + flange_over;     // flange edge
 // upside down on it.
 function top_z(x) = -1 - x * tan(top_tilt);
 
-// Left aprons: underside flat on the strip, then up at 45° to clear the rim.
+// Left aprons: underside flat on the strip, then lifts to clear the rim.
 left_total = spout_y - 2 * clearance;
 left_seg = (left_total - clearance) / 2;
 xa1 = strip_width + apron_over;      // apron front edge, over the bowl
-xr0 = strip_width - rim_h - rim_room; // 45° lift starts here, so it clears the rim at the bowl edge
-apron_tf = z0 + (xa1 - xr0) + apron_t;
+// Underside lifts at lift_angle from here, clearing the rim at the bowl edge.
+xr0 = strip_width - (rim_h + rim_room) / tan(lift_angle);
+apron_tf = z0 + (xa1 - xr0) * tan(lift_angle) + apron_t;
 function apron_top(x) = apron_tf + (xa1 - x) * tan(apron_fall);
 
 // Spout and collector (part of the right piece), local y from spout_y.
@@ -155,10 +157,10 @@ module plate() {
             for (y = [0, plate_len - ew]) translate([0, y, 0]) extrude_y(ew) polygon([
                 [xb, 0], [nose, 0], [nose, rib_top + end_wall_h], [xb, rib_top + end_wall_h]]);
         }
-        // Drip groove: a 45° V, so its roof needs no bridging.
+        // Drip groove: a V with sides at lift_angle, so its roof needs no bridging.
         gx = nose - 3 - drip_w / 2;
         translate([0, -1, 0]) extrude_y(plate_len + 2)
-            polygon([[gx - drip_d - 1, -1], [gx + drip_d + 1, -1], [gx, drip_d]]);
+            polygon([[gx - (drip_d + 1) / tan(lift_angle), -1], [gx + (drip_d + 1) / tan(lift_angle), -1], [gx, drip_d]]);
     }
 }
 
@@ -168,7 +170,7 @@ module plate() {
 // end (seg 1) gets an end wall.
 module apron(seg) {
     k = rim_h + rim_room;
-    function prof(dz) = [[xg0, z0], [xr0, z0], [xa1, z0 + xa1 - xr0], [xa1, apron_tf + dz],
+    function prof(dz) = [[xg0, z0], [xr0, z0], [xa1, z0 + (xa1 - xr0) * tan(lift_angle)], [xa1, apron_tf + dz],
                          [x_in, apron_top(x_in) + dz], [x_in, -1], [xg0, -1]];
     extrude_y(left_seg) polygon(prof(0));
     if (seg == 1) translate([0, left_seg - 2, 0]) extrude_y(2) polygon(prof(end_wall_h));

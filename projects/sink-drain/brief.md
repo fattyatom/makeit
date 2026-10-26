@@ -10,15 +10,15 @@ In the photo, green is the part that sits on the window sill, red is the
 apron down to the sink, sloped toward the drainage point. Diagonals inside
 each shape show the fall from the corners to the lowest point.
 
-Design (v6, simplified, option B; 8 pieces on 4 beds):
+Design (v7 = v6 with steeper lifts; simplified, option B; 8 pieces on 4 beds):
 - **Plate** (3 pieces, 210 mm each): ribbed cover on the sill, styled on
   `Sink_Drain_v3.stl`. Rib tops level (0°) so things stand on them; grooves
-  fall 10 mm toward the sink. 8 mm nose with a 45° V drip groove, end walls
+  fall 10 mm toward the sink. 8 mm nose with a 60° V drip groove, end walls
   at the wall and mullion. Joins just butt (no pins).
 - **Left aprons** (2 pieces, 190 mm each): cover the 40 mm strip from the
   wall to the spout and tip water straight into the left bowl: top falls 5°
   forward, front edge 6 mm past the bowl edge, underside lifts over the rim
-  at 45°. Back upstand stops 1 mm under the plate's nose. End wall at the
+  at 60° (45° showed as an overhang in the user's slicer). Back upstand stops 1 mm under the plate's nose. End wall at the
   wall end. Solid, print flat with no overhangs or bridges.
 - **Right piece** (1): channel on the strip from the mullion to the spout,
   floor falls 1.2° toward it, flange over the strip edge, closed both ends.
@@ -72,3 +72,4 @@ Hand measurements win over the scan. Note which is which.
 | 2026-10-25 | v4 | not yet | Spout narrowed (it ran 2 mm into the tap at 395); added the two-piece plinth round the tap base. v3 files withdrawn. |
 | 2026-10-25 | v5 | not yet | Level rib tops (user: things must sit on the sill), V drip groove and teardrop pin holes so the plate has no overhangs. Channels unchanged: their floors print as bridges (36 mm, 10 mm at the spout). Four bed 3MFs + one with every piece (`beds.py`). v4 files withdrawn. |
 | 2026-10-25 | v6 | not yet | Simplified (option B): left channels and spigot joins replaced by two forward-falling aprons into the bowl, plate pins dropped, collector closed on the left. Plinth kept in two halves. v5 files withdrawn. |
+| 2026-10-26 | v7 | not yet | User saw an overhang on the left bottom piece: apron underside lift and plate drip groove steepened from 45° to 60°; nothing in the plate, aprons or plinth now faces down more than 33° from vertical. `all-beds` 3MF is now a Bambu Studio / Orca project with one plate per bed. v6 files withdrawn. |
