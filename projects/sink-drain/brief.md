@@ -10,31 +10,33 @@ In the photo, green is the part that sits on the window sill, red is the
 apron down to the sink, sloped toward the drainage point. Diagonals inside
 each shape show the fall from the corners to the lowest point.
 
-Design (v8: aprons now drain sideways to the spout; 8 pieces on 4 beds):
+Design (v9: left and right aprons share one profile; 8 pieces on 4 beds):
 - **Plate** (3 pieces, 210 mm each): ribbed cover on the sill, styled on
   `Sink_Drain_v3.stl`. Rib tops level (0°) so things stand on them; grooves
   fall 10 mm toward the sink. 8 mm nose with a 60° V drip groove, end walls
   at the wall and mullion. Joins just butt (no pins).
-- **Left aprons** (2 pieces, 190 mm each): solid blocks filling the 40 mm
-  strip from the riser to just behind the bowl rim, so no water can sit in
-  the gap. Top falls 4° back into a gutter along the riser; the gutter falls
-  1.5° toward the spout. Each piece is 4.1 mm higher than the next one
-  downstream and laps a 1.5 mm tongue over it (underside lifting at 60°);
-  the spout-end piece laps over the right piece's collector. Back upstand
-  stops 1 mm under the plate's nose; end wall at the wall end. Print flat,
-  no overhangs or bridges.
-- **Right piece** (1): channel on the strip from the mullion to the spout,
-  floor falls 1.2° toward it, flange over the strip edge, closed at the mullion end and open on the
-  left over the collector for the apron's tongue (floor rises 0.5 mm to
-  that edge so nothing runs back out).
-  Spout: left edge at 380 mm, 10.4 mm wide inside, reaches 100 mm out beside
-  the tap, falls 2°, clears the 3 mm rim. Prints upside down; the floors
-  print as bridges (36 mm channel, 10 mm spout).
+- **Apron profile** (left and right): back upstand 1 mm under the plate's
+  nose; a 10 mm gutter under the plate's drip line; a 1.6 mm ridge 3 mm
+  above the gutter floor; the rest slopes 8° toward the sink and overhangs
+  the bowl edge by 3 mm, its underside lifting over the rim at 60°. Solid,
+  prints flat with no overhangs.
+- **Left aprons** (2 pieces, 190 mm each): gutters fall 3.5° (was 1.5°).
+  The wall-end piece's gutter is dammed at the joint and empties onto the
+  front slope through a 30 mm gap in its ridge; the spout-end piece's gutter
+  starts again at the joint and laps a tongue into the collector. The front
+  slope is continuous across the joint.
+- **Right piece** (1): same profile from the mullion to the spout; its
+  gutter falls 5.1° to the collector. Under the plinth the whole top falls
+  back into the gutter instead. Collector open on the left for the apron's
+  tongue (floor rises 0.5 mm to that edge). Spout: left edge at 380 mm,
+  10.4 mm wide inside, reaches 100 mm out beside the tap, floor falls 1.5°;
+  solid to the bed except a 60°-sided notch over the rim (10 mm bridge).
+  Prints flat, turned 36° on its bed.
 - **Plinth** (2 halves, back and front, split through the tap centre so
   they go on round the tap body): covers the tap base and the steel round
-  it. Top falls toward the spout and the channel. Rests on the channel
-  flange, the spout wall and the tap's base flange; the front half laps 6 mm
-  over the back half. (A one-piece C would leave a gap at the tap.)
+  it. Top falls toward the spout and the sill; rests on the spout's right
+  wall and the tap's base flange and drips into the spout and onto the right
+  piece. The front half laps 6 mm over the back half.
 
 ## Inputs (in `inputs/`)
 | File | What it is |
@@ -66,7 +68,7 @@ Hand measurements win over the scan. Note which is which.
 - Material: PETG. Filament: 240 °C (245 first layer), bed 75 °C textured PEI (glue on smooth),
   fan 30-40 %, bridges/overhangs 90 %, max 12 mm³/s, dry if opened.
   Process (written per object into the 3MFs): 0.2 mm layers, 3 walls, 5/4 top/bottom, 15 % gyroid,
-  no supports; 3 mm brim on aprons and plinth, 5 mm brim + thick bridges at 25 mm/s on the right piece.
+  no supports; 3 mm brim on aprons and plinth, 5 mm brim + thick bridges at 25 mm/s (rim notch) on the right piece.
 - Sits loose (user). Must clear the tap.
 - No water past the outer ends; cover the strip and surrounds as much as possible (user).
 
@@ -84,3 +86,4 @@ Hand measurements win over the scan. Note which is which.
 | 2026-10-26 | v7 | not yet | PETG settings added to the 3MFs: per-object process overrides, filament settings in the project description. Bed 4 turned 57° so the right piece fits with its brim. |
 | 2026-10-26 | v7 | test slice | Plate slice fits the sill. Apron base width right, but tipping water forward over the rim didn't work and left water in the gap. |
 | 2026-10-26 | v8 | not yet | Aprons rebuilt: solid on the strip to the rim, gutter along the riser falling 1.5° to the spout, tongue laps at each join and into the collector (now open on the left). Test slice is the spout end: 30 mm of the apron and of the right piece. v7 files withdrawn. |
+| 2026-10-26 | v9 | not yet | User: gutter too shallow; match left and right; gutter needn't take the whole width, the rest can slope into the sink over the edge. Common profile (gutter + ridge + 8° front slope overhanging 3 mm); left gutters 3.5°, wall-end piece empties forward through its ridge; right gutter 5.1°; right piece prints flat. Plinth lowered to rest on the spout wall. v8 files withdrawn. |
