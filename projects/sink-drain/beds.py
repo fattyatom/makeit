@@ -21,7 +21,7 @@ BEDS = [
     ["plate-0", "left-1"],
     ["plate-1", "left-0"],
     ["plate-2", ["plinth-0", "plinth-1"]],
-    ["right--1@36"],   # turned 36° so it fits with its 5 mm brim
+    ["right--1"],
 ]
 # PETG process settings, written per object (Bambu Studio / Orca read these
 # as object overrides). Every piece: 0.2 mm layers, 3 walls, 15 % gyroid,
@@ -32,11 +32,11 @@ COMMON = {"layer_height": "0.2", "wall_loops": "3", "top_shell_layers": "5", "bo
 SETTINGS = {
     # Big flat footprint: no brim needed.
     "plate": {"brim_type": "no_brim"},
-    # Long solid block: a small brim stops the ends lifting.
-    "left": {"brim_type": "outer_only", "brim_width": "3"},
-    # Long, flat on the bed; the only bridge is the 10 mm rim notch under the spout.
-    "right": {"brim_type": "outer_only", "brim_width": "5", "thick_bridges": "1", "bridge_speed": "25",
-              "bridge_flow": "0.95"},
+    # Long solid blocks: a small brim stops the ends lifting. The spout-end
+    # piece's only bridge is the 10 mm rim notch under the spout.
+    "left": {"brim_type": "outer_only", "brim_width": "3", "thick_bridges": "1", "bridge_speed": "25"},
+    # Long and flat on the bed.
+    "right": {"brim_type": "outer_only", "brim_width": "5"},
     # Stands on its top plate.
     "plinth": {"brim_type": "outer_only", "brim_width": "3"},
 }
@@ -46,12 +46,12 @@ DESCRIPTION = ("PETG. Nozzle 240 C (245 C first layer), bed 75 C on textured PEI
                "part fan 30-40 %, overhang/bridge fan 90 %, max volumetric speed 12 mm3/s, "
                "dry the filament (65 C, 4-6 h) if it has been open. Per-object process settings are set in this file: "
                "0.2 mm layers, 3 walls, 5 top / 4 bottom layers, 15 % gyroid, no supports; brims on the aprons, "
-               "plinth halves and the right piece; thick bridges at 25 mm/s for the right piece's rim notch.")
+               "plinth halves and the right piece; thick bridges at 25 mm/s for the rim notch under the spout.")
 
 NAMES = {"plate-0": "plate-1", "plate-1": "plate-2", "plate-2": "plate-3",
-         "left-0": "apron-spout-end", "left-1": "apron-wall-end", "right--1": "right-with-spout",
+         "left-0": "apron-spout-end-with-spout", "left-1": "apron-wall-end", "right--1": "right",
          "plinth-0": "plinth-back", "plinth-1": "plinth-front",
-         "ts-left": "test-apron-spout-end", "ts-right": "test-right-spout-end"}
+         "ts-left": "test-apron-spout-end", "ts-right": "test-right-start"}
 
 
 def load(key):
@@ -148,8 +148,8 @@ for i, bed in enumerate(BEDS, 1):
     print(f"bed {i}: {', '.join(NAMES[k] for k, _ in placed)}  ({size[0]:.0f} x {size[1]:.0f} mm) -> {path.name}")
 write_project(PRINT / f"sink-drain-{VERSION}-all-beds.3mf", plates)
 
-# Test slices of the spout end (30 mm of the apron with its tongue, and of the
-# right piece with the open collector and the spout) on one bed, same settings.
+# Test slices round the spout (30 mm of the spout-end apron with the collector
+# and spout, and the right piece's first 30 mm with its tongue) on one bed.
 placed, size = layout([["ts-left"], ["ts-right"]])
 write_project(PRINT / f"sink-drain-{VERSION}-test-slice.3mf", [[(f"sink-drain-{VERSION}-{NAMES[k]}", m) for k, m in placed]])
 print(f"test slice ({size[0]:.0f} x {size[1]:.0f} mm) -> sink-drain-{VERSION}-test-slice.3mf")
