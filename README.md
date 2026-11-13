@@ -56,7 +56,8 @@ scripts/setup.sh                               # OpenSCAD, xvfb, Python deps
 python -m makeit new <name>                    # projects/<name> from the template
 python -m makeit analyze scan.ply              # planes, angles, gaps (mm)
 python -m makeit section scan.ply --origin 0,0,0 --normal 1,0,0 --out out/sec
-python -m makeit build projects/<name>         # out/model.stl, .3mf, previews
+python -m makeit build projects/<name>         # out/model.stl, .3mf, previews (incl. on-bed view)
+python -m makeit bambu out/model.stl print/<name>-v1.3mf --name <name>-v1 --set enable_support=0
 python -m makeit build projects/<name> --set test_slice=30 --tag test-slice
 python -m pytest -q
 ```
@@ -64,7 +65,11 @@ python -m pytest -q
 Each model is plain OpenSCAD, so you can also open `model.scad` in OpenSCAD
 and change values with its Customizer panel.
 
-## Example
+## Examples
+
+`projects/earbud-holder/` is a sleeve screwed under a desk that holds an
+earbud case on edge. Spring fingers click in behind the case's rounded
+edge. It prints upside down in PETG with no supports.
 
 `projects/sink-gap-cover/` is a strip that sits on the sink's back rim,
 keys into the gap with a tab, rises against the wall, and slopes so water

@@ -63,7 +63,7 @@ xe = xo + ear;                        // ear tips
 xb = wi / 2 - detent_depth + detent_r;
 arc_x = case_w / 2 - case_edge_r;
 arc_y = y0 + case_l - case_edge_r;
-yb = arc_y + sqrt(pow(case_edge_r + detent_r, 2) - pow(xb - arc_x, 2)) - detent_preload;
+yb = detent_y(wi / 2, case_w / 2, case_edge_r, detent_r, detent_depth, arc_y) - detent_preload;
 y_end = yb + detent_r;                // fingers end here
 length = y_end;
 plate_front_x = wi / 2 - detent_depth - finger_gap;
@@ -83,16 +83,9 @@ assert(detent_depth > clearance + 0.5, "bumps would not touch the case");
 assert(xb - detent_r < wi / 2 + finger_t, "bump detached from its finger");
 assert(2 * plate_front_x > screw_head_d + 2 || !front_screw, "no room for the front screw");
 
-module rrect(x0, y0_, x1, y1, r) {
-    translate([x0 + r, y0_ + r]) offset(r) square([x1 - x0 - 2 * r, y1 - y0_ - 2 * r]);
-}
-
 // Countersunk screw hole through the plate; the head sits on the underside.
 module screw_hole(x, y) {
-    translate([x, y, -plate_t - 0.01]) {
-        cylinder(d = screw_d, h = plate_t + 0.02, $fn = 32);
-        cylinder(d1 = screw_head_d, d2 = 0, h = screw_head_d / 2, $fn = 48);
-    }
+    translate([x, y, 0]) mirror([0, 0, 1]) cs_screw_hole(plate_t, screw_d, screw_head_d);
 }
 
 module body() {
@@ -104,9 +97,7 @@ module body() {
         rrect(-plate_front_x, floor_depth - 2, plate_front_x, y_end, 2);
     // 45° gussets under the ears, between the two screw holes.
     if (gusset_t > 0) for (s = [-1, 1]) mirror([s < 0 ? 1 : 0, 0, 0])
-        translate([0, (hole_ys[0] + hole_ys[1] + gusset_t) / 2, 0]) rotate([90, 0, 0])
-            linear_extrude(gusset_t)
-                polygon([[xo - 0.01, -plate_t + 0.01], [xe - 1, -plate_t + 0.01], [xo - 0.01, -plate_t - (ear - 1)]]);
+        translate([xo, (hole_ys[0] + hole_ys[1]) / 2, -plate_t]) mirror([0, 0, 1]) gusset45(ear - 1, gusset_t);
     // Side walls + floor + back wall as one U, full height.
     translate([0, 0, -h_total]) difference() {
         translate([-xo, 0, 0]) cube([2 * xo, floor_depth, h_total]);

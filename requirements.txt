@@ -3,3 +3,4 @@ trimesh>=4.0
 scipy>=1.11     # trimesh: mesh sections
 networkx>=3.0   # trimesh: mesh sections
 pytest>=8.0
+pillow>=10      # tests: preview framing
