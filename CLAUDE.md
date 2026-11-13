@@ -38,7 +38,8 @@ Tests: `python -m pytest -q`. Every change to `makeit/` or `lib/` ships a test.
 
 1. **Read everything first.** `brief.md`, then each file in `inputs/`.
    Look at every photo and sketch (follow `read-drawing`). All numbers
-   are mm. Never rescale one; if it can't be right, ask. Restate the
+   are mm, read literally, decimal point included (look closely: periods
+   are easy to miss). Never rescale one; if it can't be right, ask. Restate the
    part in 2–3 lines, including how it is oriented and which way things go
    in, and list any measurement that is missing. Ask the user for the missing ones
    **before** modelling. Never invent a critical dimension.

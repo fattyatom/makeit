@@ -16,14 +16,13 @@ out with one hand. It prints upside down in PETG with no supports.
 ## Measurements
 | Name | Value (mm) | Source | Notes |
 |---|---|---|---|
-| case_w | 21.0 | sketch note "210" | case thickness, across the sleeve (x). **Needs confirming**, see below |
-| case_h | 57.0 | photo note "570" | standing height (z). **Needs confirming**, see below |
-| case_l | 64.0 | photo note "640" | slide direction (y); the lanyard side goes to the back. **Needs confirming**, see below |
+| case_w | 21.0 | sketch note "210" | case thickness, across the sleeve (x). |
+| case_h | 57.0 | photo note "570" | standing height (z). |
+| case_l | 64.0 | photo note "640" | slide direction (y); the lanyard side goes to the back. |
 
-Units: the user writes every number in mm ("570" = 570 mm). Taken
-literally, 570 × 640 × 210 mm doesn't fit a pocket earbud case, and v2 was
-printed at 57 × 64 × 21 mm and only the clip was reported, so the model
-keeps 57 / 64 / 21 until the user confirms the case size.
+Units: every number is in mm, read literally including the decimal point.
+The notes are 57.0 / 64.0 / 21.0 with faint periods. The user confirmed
+57 × 64 × 21 mm.
 | case_edge_r | 5 | **PLACEHOLDER**, estimated from the photo | radius of the rounded edges round the case's faces. The bump position depends on it |
 | back_band_h | 19 | sketch "19 mm" | back wall solid for the top 19 mm, open below |
 

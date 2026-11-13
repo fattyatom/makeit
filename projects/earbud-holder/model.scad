@@ -19,9 +19,9 @@
 use <../../lib/makeit.scad>
 
 /* [Measured] */
-case_w = 21.0;       // hand: sketch note "210" (mm, read as 21.0: see brief), case thickness (x)
-case_h = 57.0;       // hand: photo note "570" (read as 57.0: see brief), standing height (z). Lanyard side faces the back.
-case_l = 64.0;       // hand: photo note "640" (read as 64.0: see brief), slide direction (y)
+case_w = 21.0;       // hand: sketch note "210" (21.0 mm, faint period; user confirmed), case thickness (x)
+case_h = 57.0;       // hand: photo note "570" (57.0 mm, faint period; user confirmed), standing height (z). Lanyard side faces the back.
+case_l = 64.0;       // hand: photo note "640" (64.0 mm, faint period; user confirmed), slide direction (y)
 case_edge_r = 5;     // PLACEHOLDER: radius of the rounded edges round the case's faces (from the photo)
 back_band_h = 19;    // sketch: back wall solid for the top 19 mm, open below
 

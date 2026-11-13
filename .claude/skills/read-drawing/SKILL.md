@@ -13,10 +13,14 @@ here, before `model.scad`.
 
 - Write down each annotation with what it points at:
   `"570" → arrow across the photographed case, vertical`.
-- **Every number is in mm.** The user's rule: take each one literally and
-  never rescale it quietly. If a number can't be right for the object
-  (e.g. "570" across a pocket-sized case), **ask** before modelling, with
-  the value you would otherwise use, and record the answer in the brief.
+- **Every number is in mm, read literally, including its decimal point.**
+  The user's rule: "assume everything in mm, unless you see a clear
+  period". Zoom in on each number and look for a small or faint period:
+  the earbud case's "57.0 / 64.0 / 21.0" read as "570 / 640 / 210" because
+  the dots were hard to see.
+- If a number can't be right for the object (×10 too big for a pocket
+  case), suspect a missed period. **Ask** before modelling, with both
+  readings, and record the answer in the brief. Never rescale quietly.
 - Units written on the drawing ("19 mm") are mm too.
 - A number next to a ↕ or ↔ symbol is a size along that axis of the
   drawn view, not necessarily along the part's x/y/z. Map it in step 2.
