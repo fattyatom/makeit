@@ -1,4 +1,4 @@
-"""CLI: python -m makeit {new,analyze,section,build} ..."""
+"""CLI: python -m makeit {new,analyze,section,build,bambu} ..."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import json
 import os
 import sys
 
+from . import bambu
 from . import build as b
 from . import scan
 
@@ -55,6 +56,14 @@ def main(argv=None) -> int:
     p.add_argument("--no-previews", action="store_true")
     p.add_argument("--tag", default="", help="suffix for output names, e.g. test-slice")
 
+    p = sub.add_parser("bambu", help="pack a print-oriented STL into a Bambu Studio 3MF")
+    p.add_argument("stl")
+    p.add_argument("out")
+    p.add_argument("--name", required=True, help="object name shown in the slicer")
+    p.add_argument("--set", action="append", default=[], metavar="KEY=VALUE",
+                   help="per-object Bambu Studio setting, e.g. enable_support=0")
+    p.add_argument("--bed", default="256,256", help="bed x,y in mm")
+
     args = ap.parse_args(argv)
 
     if args.cmd == "new":
@@ -75,6 +84,9 @@ def main(argv=None) -> int:
                          formats=tuple(args.formats.split(",")),
                          previews=not args.no_previews, tag=args.tag)
         print(json.dumps(result, indent=2))
+    elif args.cmd == "bambu":
+        bed = tuple(_vec(args.bed))
+        print(json.dumps(bambu.write_bambu_3mf(args.stl, args.out, args.name, _parse_sets(args.set), bed)))
     return 0
 
 

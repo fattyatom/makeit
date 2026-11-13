@@ -13,7 +13,7 @@ judgement is yours.
   release files)
 - `templates/part/` — copied by `python -m makeit new <name>`
 - `lib/makeit.scad` — shared helpers (`print_cut`, `segment_y`, `keep_y`)
-- `makeit/` — Python CLI: `new`, `analyze`, `section`, `build`
+- `makeit/` — Python CLI: `new`, `analyze`, `section`, `build`, `bambu` (print STL -> Bambu Studio 3MF)
 - `artifact/makeit.html` — the makeit page (claude.ai artifact
   `https://claude.ai/artifact/AaAurTgD9kAzqn1F95etpy`) where the user files
   part requests. A session started from it follows
