@@ -33,7 +33,7 @@ out with one hand. It prints upside down in PETG with no supports.
   0.3 mm preloaded so it pushes the case against the back wall. Below the
   fingers the front of the case is open on both faces: pinch it and pull.
   You can also push it out from behind through the back opening.
-- Clearance 0.5 mm per side in x and y, 0.6 mm in total over the thickness.
+- Clearance 0.5 mm per side in x and y, 0.6 mm in total over the height.
 
 ## Constraints
 - Printer / bed size: Bambu Lab, 256 × 256 mm
