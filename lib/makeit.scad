@@ -57,3 +57,23 @@ module gusset45(leg, t) {
 function detent_y(wall_x, part_x, rc, rb, depth, corner_y) =
     let(xb = wall_x - depth + rb, ax = part_x - rc)
     corner_y + sqrt(pow(rc + rb, 2) - pow(xb - ax, 2));
+
+// Hook detent (stronger than detent_y's round bump): a barb on a spring
+// finger whose retaining face leans `angle` degrees off the channel wall
+// (45 = firm click-out, 90 = locked). The face starts at the wall (x =
+// wall_x) at the returned y and runs inward and forward, so it touches the
+// part's corner arc (radius rc, side face at part_x, front at front_y).
+// Pull-out force per finger ≈ finger force × tan(angle + friction angle),
+// whatever rc really is. The hook must stand at least
+// (wall_x - part_x) + rc * (1 - cos(angle)) into the channel to catch.
+function hook_root_y(wall_x, part_x, rc, angle, front_y) =
+    front_y - rc + rc * sin(angle) - ((wall_x - part_x) + rc * (1 - cos(angle))) * cos(angle) / sin(angle);
+
+// 2D hook for a finger whose inner face is the line x = 0 (finger at x>0),
+// facing -x. Retaining face from (0, y_root) leaning `angle` off the wall to
+// the tip `depth` in; then an entry ramp at `entry` degrees back to the wall.
+module hook2d(y_root, depth, angle, entry = 30) {
+    tip_y = y_root + depth * cos(angle) / sin(angle);
+    polygon([[0.01, y_root], [-depth, tip_y], [-depth, tip_y + 0.4],
+             [0.01, tip_y + 0.4 + depth / tan(entry)]]);
+}

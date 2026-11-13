@@ -16,9 +16,14 @@ out with one hand. It prints upside down in PETG with no supports.
 ## Measurements
 | Name | Value (mm) | Source | Notes |
 |---|---|---|---|
-| case_w | 21.0 | sketch note "210" | case thickness, across the sleeve (x) |
-| case_h | 57.0 | photo note "570" | standing height (z) |
-| case_l | 64.0 | photo note "640" | slide direction (y); the lanyard side goes to the back |
+| case_w | 21.0 | sketch note "210" | case thickness, across the sleeve (x). **Needs confirming**, see below |
+| case_h | 57.0 | photo note "570" | standing height (z). **Needs confirming**, see below |
+| case_l | 64.0 | photo note "640" | slide direction (y); the lanyard side goes to the back. **Needs confirming**, see below |
+
+Units: the user writes every number in mm ("570" = 570 mm). Taken
+literally, 570 × 640 × 210 mm doesn't fit a pocket earbud case, and v2 was
+printed at 57 × 64 × 21 mm and only the clip was reported, so the model
+keeps 57 / 64 / 21 until the user confirms the case size.
 | case_edge_r | 5 | **PLACEHOLDER**, estimated from the photo | radius of the rounded edges round the case's faces. The bump position depends on it |
 | back_band_h | 19 | sketch "19 mm" | back wall solid for the top 19 mm, open below |
 
@@ -27,12 +32,16 @@ out with one hand. It prints upside down in PETG with no supports.
   one in the ceiling between the fingers. 45° gussets brace the ears. The
   top is flat for hot glue.
 - Walls 2.4 mm, floor 2 mm (it bridges 22 mm when printed upside down).
-- Stopper: the top 30 mm of each side wall continues past the floor as a
-  1.6 mm spring finger (25 mm long). Each has a 3 mm radius bump that stands
-  1.5 mm into the cavity and sits behind the case's rounded front edge,
-  0.3 mm preloaded so it pushes the case against the back wall. Below the
-  fingers the front of the case is open on both faces: pinch it and pull.
-  You can also push it out from behind through the back opening.
+- Stopper (v3): the top 30 mm of each side wall continues past the floor
+  as a 1.6 mm spring finger (22.7 mm to the hook). Each hook stands 2.5 mm
+  into the cavity. A 45° retaining face sits behind the case's rounded
+  front edge, 0.3 mm preloaded so it pulls the case to the back wall, and
+  a 30° ramp faces the front for pushing in. Model estimate: ≈ 39 N to
+  pull out, ≈ 22 N to push in, 0.9 % root strain. Set `hook_angle` lower
+  for a softer pull (40° ≈ 32 N) or higher for a firmer one.
+- Below the fingers the front of the case is open on both faces: pinch it
+  and pull. You can also push it out from behind through the back
+  opening.
 - Clearance 0.5 mm per side in x and y, 0.6 mm in total over the height.
 
 ## Constraints
@@ -44,4 +53,5 @@ out with one hand. It prints upside down in PETG with no supports.
 | Date | Version | Printed | Result / change |
 |---|---|---|---|
 | 2026-11-13 | v1 | – | First draft, case lying flat. Footprint 86.8 × 64.1 × 26.6 mm |
-| 2026-11-13 | v2 | – | User: the case should stand vertical. Sleeve now 21 mm wide and 57 mm tall, the back is open below a 19 mm band, ears braced with gussets. 50.8 × 68.0 × 62.6 mm |
+| 2026-11-13 | v2 | yes | User: the case should stand vertical. Sleeve now 21 mm wide and 57 mm tall, the back is open below a 19 mm band, ears braced with gussets. 50.8 × 68.0 × 62.6 mm |
+| 2026-11-13 | v3 | – | User on v2: "retention clip doesn't really work, strength not enough". The round bumps (1 mm of travel, contact angle flattening to ~0) held only a few N. Replaced with 45° hooks, 2.5 mm deep (2 mm of travel): ≈ 39 N pull-out (estimate). 50.8 × 69.9 × 62.6 mm |

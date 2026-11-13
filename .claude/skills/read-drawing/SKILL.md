@@ -13,13 +13,11 @@ here, before `model.scad`.
 
 - Write down each annotation with what it points at:
   `"570" → arrow across the photographed case, vertical`.
-- **Numbers with no decimal point are often tenths of a mm.** On a pocket
-  object, "570 / 640 / 210" means 57.0 / 64.0 / 21.0 mm. If a reading
-  gives a size that is absurd for the object, try ÷10. If neither fits,
-  ask.
-- Units written on the drawing ("19 mm") win. Bare numbers on furniture
-  scale (desks, shelves) are usually mm. On small parts they are mm or
-  tenths of a mm.
+- **Every number is in mm.** The user's rule: take each one literally and
+  never rescale it quietly. If a number can't be right for the object
+  (e.g. "570" across a pocket-sized case), **ask** before modelling, with
+  the value you would otherwise use, and record the answer in the brief.
+- Units written on the drawing ("19 mm") are mm too.
 - A number next to a ↕ or ↔ symbol is a size along that axis of the
   drawn view, not necessarily along the part's x/y/z. Map it in step 2.
 

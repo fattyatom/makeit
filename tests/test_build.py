@@ -154,3 +154,24 @@ def test_tall_part_fits_in_3d_previews(tmp_path):
         bg = img[0, 0]
         border = np.concatenate([img[0], img[-1], img[:, 0], img[:, -1]])
         assert np.abs(border - bg).max() < 10, f"{name} touches the image edge"
+
+
+@needs_openscad
+def test_hook_root_y_touches_corner(tmp_path):
+    import math
+
+    _copy_repo_bits(tmp_path, None)
+    scad = tmp_path / "h.scad"
+    # Wall at x=11, part side at 10.5, corner radius 5, 45° face, front at 100.
+    scad.write_text('use <lib/makeit.scad>\necho(y = hook_root_y(11, 10.5, 5, 45, 100));\n'
+                    'linear_extrude(1) translate([11, 0]) hook2d(90, 2.5, 45);\n')
+    msgs = b._run([b._openscad(), "-o", str(tmp_path / "h.stl"), str(scad)])
+    y = float(next(m for m in msgs if "y =" in m).split("=")[-1])
+    # Tangent point of the 45° face on the arc centred (5.5, 95): (5.5 + 5/√2, 95 + 5/√2).
+    tx, ty = 5.5 + 5 / math.sqrt(2), 95 + 5 / math.sqrt(2)
+    assert ty - y == pytest.approx(11 - tx, abs=1e-4)          # on the 45° line from (11, y)
+    assert y == pytest.approx(100 - 0.5 - 5 * (2 - math.sqrt(2)), abs=1e-4)
+    stats = b.mesh_stats(tmp_path / "h.stl")
+    # Hook spans 2.5 mm in x; in y from the root to the end of the 30° entry ramp.
+    assert stats["size_mm"][0] == pytest.approx(2.51, abs=0.02)
+    assert stats["size_mm"][1] == pytest.approx(2.5 + 0.4 + 2.5 / math.tan(math.radians(30)), abs=0.02)
