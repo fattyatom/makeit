@@ -1,6 +1,7 @@
 import zipfile
 import xml.etree.ElementTree as ET
 
+import numpy as np
 import pytest
 import trimesh
 
@@ -25,9 +26,12 @@ def test_bambu_3mf_centres_part_and_keeps_settings(tmp_path):
         cfg = ET.fromstring(z.read("Metadata/model_settings.config"))
         meta = {m.get("key"): m.get("value") for m in cfg.find("object").findall("metadata")}
         assert meta["name"] == "box" and meta["enable_support"] == "0"
-        ET.fromstring(z.read("3D/3dmodel.model"))
-    mesh = trimesh.load(str(out), force="mesh")
-    lo, hi = mesh.bounds
+        model = ET.fromstring(z.read("3D/3dmodel.model"))
+    # Parse with ElementTree: trimesh's 3MF loader needs lxml, which CI lacks.
+    ns = {"m": "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"}
+    verts = np.array([[float(v.get(k)) for k in "xyz"] for v in model.iterfind(".//m:vertex", ns)])
+    offset = np.array([float(t) for t in model.find(".//m:item", ns).get("transform").split()[9:]])
+    lo, hi = verts.min(0) + offset, verts.max(0) + offset
     assert abs(lo[2]) < 1e-3
     assert abs((lo[0] + hi[0]) / 2 - 128) < 1e-3 and abs((lo[1] + hi[1]) / 2 - 128) < 1e-3
 
