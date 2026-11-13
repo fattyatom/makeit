@@ -55,7 +55,8 @@ message in this session.
 ## 4. Release
 
 - Copy the files the user will print to `projects/<slug>/print/` as
-  `<slug>-v<N>.3mf` and `<slug>-v<N>.stl`, plus the test slice when you
+  `<slug>-v<N>.3mf` (made with `python -m makeit bambu`, see `CLAUDE.md`
+  step 7) and `<slug>-v<N>.stl`, plus the test slice when you
   made one (`<slug>-v<N>-test-slice.stl`).
 - Commit and push (the session's branch and PR flow), and note the branch.
 
@@ -64,7 +65,7 @@ message in this session.
 Upload the previews and the STL so the page can show and download them:
 
 - Previews: `Artifact` publish with `url`, `asset: true`,
-  `file_paths: [the four out/model-*.png]`. Keep each returned id.
+  `file_paths: [the five out/model-*.png]`. Keep each returned id.
 - STL: the asset store takes text, not `.stl`. Copy the ASCII STL to a
   `.txt` file in your scratchpad and upload it alone with `file_path`. The
   page re-wraps it as `<slug>.stl` inside a zip when the user downloads.

@@ -12,8 +12,19 @@ judgement is yours.
   `model.scad`, `out/` (generated, git-ignored), `print/` (committed
   release files)
 - `templates/part/` — copied by `python -m makeit new <name>`
-- `lib/makeit.scad` — shared helpers (`print_cut`, `segment_y`, `keep_y`)
-- `makeit/` — Python CLI: `new`, `analyze`, `section`, `build`
+- `lib/makeit.scad` — shared helpers (`print_cut`, `segment_y`, `keep_y`,
+  `rrect`, `cs_screw_hole`, `gusset45`, `hook2d`/`hook_root_y`, `detent_y`).
+  Use them before writing your own.
+- `.claude/skills/` — design know-how learned on earlier parts. Load the one
+  that fits before modelling:
+  - `read-drawing`: sketches and annotated photos → numbers, orientation,
+    questions
+  - `support-free-print`: bed face, bridges vs cantilevers, gussets, holes
+  - `retention-features`: stoppers, detents, snap fingers, with sizing maths
+  - `make-part`: requests that come from the makeit page
+  When a part teaches something new, add it to the matching skill in the
+  same PR.
+- `makeit/` — Python CLI: `new`, `analyze`, `section`, `build`, `bambu` (print STL -> Bambu Studio 3MF)
 - `artifact/makeit.html` — the makeit page (claude.ai artifact
   `https://claude.ai/artifact/AaAurTgD9kAzqn1F95etpy`) where the user files
   part requests. A session started from it follows
@@ -26,8 +37,11 @@ Tests: `python -m pytest -q`. Every change to `makeit/` or `lib/` ships a test.
 ## Workflow for a new part
 
 1. **Read everything first.** `brief.md`, then each file in `inputs/`.
-   Look at every photo and sketch. Restate the part in 2–3 lines and list
-   any measurement that is missing. Ask the user for the missing ones
+   Look at every photo and sketch (follow `read-drawing`). All numbers
+   are mm, read literally, decimal point included (look closely: periods
+   are easy to miss). Never rescale one; if it can't be right, ask. Restate the
+   part in 2–3 lines, including how it is oriented and which way things go
+   in, and list any measurement that is missing. Ask the user for the missing ones
    **before** modelling. Never invent a critical dimension.
 2. **Get numbers from the scan** (if there is one):
    `python -m makeit analyze projects/<name>/inputs/scan.ply --json projects/<name>/out/scan.json`
@@ -49,9 +63,11 @@ Tests: `python -m pytest -q`. Every change to `makeit/` or `lib/` ships a test.
    - `assert()` the parameter combinations that can't be printed
 4. **Build and look.**
    `python -m makeit build projects/<name>` writes `out/model.stl`,
-   `out/model.3mf` and four previews: `iso`, `profile` (the cross-section
-   at mid-length), `side` and `top`. **Read the PNGs** and check them
-   against the sketch before you show the user anything. Check
+   `out/model.3mf` and five previews: `iso`, `profile` (the cross-section
+   at mid-length), `side`, `top` and `bed` (the exported part as it sits
+   on the bed). **Read the PNGs** and check them against the sketch before
+   you show the user anything. Check `bed` for anything that hangs in the
+   air (`support-free-print`). Check
    `print_orientation.size_mm` against the bed size in the brief. Any
    `openscad_messages` warning is a bug until proven otherwise.
 5. **Test fit before the full print.** Offer a short slice first:
@@ -60,7 +76,10 @@ Tests: `python -m pytest -q`. Every change to `makeit/` or `lib/` ships a test.
    parameter, rebuild and re-check. Add each round to the brief's fit log.
 7. **Release.** Copy the files the user will print into
    `projects/<name>/print/` (e.g. `sink-gap-cover-v2.3mf`), commit, and
-   tell them the path. In a cloud session they get files through git (or
+   tell them the path. Make the 3MF with `python -m makeit bambu` (named
+   object, centred on the bed, per-object settings such as
+   `enable_support=0`). Bambu Studio may ignore those settings in a file
+   it didn't write, so list them in your reply too. In a cloud session they get files through git (or
    SendUserFile), so commit what they need.
 
 ## Design defaults (override in the brief)

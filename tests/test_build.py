@@ -1,6 +1,7 @@
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from makeit import build as b
@@ -93,4 +94,84 @@ def test_previews_render(tmp_path):
     dest = b.new_project("t", root=tmp_path)
     result = b.build(dest, formats=("stl",))
     assert sorted(Path(p).stem for p in result["previews"]) == [
-        "model-iso", "model-profile", "model-side", "model-top"]
+        "model-bed", "model-iso", "model-profile", "model-side", "model-top"]
+
+
+LIB_DEMO = """
+use <lib/makeit.scad>
+difference() {
+    union() {
+        linear_extrude(3) rrect(-20, -10, 20, 10, 4);
+        translate([-20, 0, 0]) cube([2, 4, 20]);     // a wall at x=-18
+        translate([-18, 2, 3]) gusset45(8, 2);
+    }
+    cs_screw_hole(3);
+}
+"""
+
+
+@needs_openscad
+def test_lib_helpers_build(tmp_path):
+    _copy_repo_bits(tmp_path, None)
+    scad = tmp_path / "demo.scad"
+    scad.write_text(LIB_DEMO)
+    stl = tmp_path / "demo.stl"
+    b._run([b._openscad(), "-o", str(stl), str(scad)])
+    stats = b.mesh_stats(stl)
+    assert stats["watertight"]
+    assert stats["size_mm"] == pytest.approx([40, 20, 20], abs=0.01)
+    # Plate (rounded corners) + wall + gusset, minus the countersunk hole,
+    # which takes the 4.2 mm shaft and most of the 8.4 mm cone out of 3 mm.
+    plate = 40 * 20 - 4 * (16 - 3.14159 * 4)
+    solid = plate * 3 + 2 * 4 * 17 + 2 * 32
+    assert solid - 120 < 1000 * stats["volume_cm3"] < solid - 60
+
+
+@needs_openscad
+def test_detent_y_touches_corner(tmp_path):
+    _copy_repo_bits(tmp_path, None)
+    scad = tmp_path / "d.scad"
+    # wall at 11, part face at 10.5, rc 5, rb 3, depth 1.5 -> bump centre x 12.5,
+    # corner centre x 5.5: dx 7, rc+rb 8, so y = corner_y + sqrt(15).
+    scad.write_text('use <lib/makeit.scad>\necho(y = detent_y(11, 10.5, 5, 3, 1.5, 100));\ncube(1);\n')
+    msgs = b._run([b._openscad(), "-o", str(tmp_path / "d.stl"), str(scad)])
+    y = float(next(m for m in msgs if "y =" in m).split("=")[-1])
+    assert y == pytest.approx(100 + 15 ** 0.5, abs=1e-4)
+
+
+@needs_openscad
+@pytest.mark.skipif(not shutil.which("xvfb-run"), reason="previews need xvfb-run")
+def test_tall_part_fits_in_3d_previews(tmp_path):
+    from PIL import Image
+
+    _copy_repo_bits(tmp_path, None)
+    dest = b.new_project("t", root=tmp_path)
+    # Template part: 20 wide, 30 long, 60 tall. Tall parts used to be cropped.
+    result = b.build(dest, {"length": "30", "thickness": "60"}, formats=("stl",))
+    for name in ("model-iso", "model-bed"):
+        png = next(p for p in result["previews"] if Path(p).stem == name)
+        img = np.asarray(Image.open(png).convert("RGB")).astype(int)
+        bg = img[0, 0]
+        border = np.concatenate([img[0], img[-1], img[:, 0], img[:, -1]])
+        assert np.abs(border - bg).max() < 10, f"{name} touches the image edge"
+
+
+@needs_openscad
+def test_hook_root_y_touches_corner(tmp_path):
+    import math
+
+    _copy_repo_bits(tmp_path, None)
+    scad = tmp_path / "h.scad"
+    # Wall at x=11, part side at 10.5, corner radius 5, 45° face, front at 100.
+    scad.write_text('use <lib/makeit.scad>\necho(y = hook_root_y(11, 10.5, 5, 45, 100));\n'
+                    'linear_extrude(1) translate([11, 0]) hook2d(90, 2.5, 45);\n')
+    msgs = b._run([b._openscad(), "-o", str(tmp_path / "h.stl"), str(scad)])
+    y = float(next(m for m in msgs if "y =" in m).split("=")[-1])
+    # Tangent point of the 45° face on the arc centred (5.5, 95): (5.5 + 5/√2, 95 + 5/√2).
+    tx, ty = 5.5 + 5 / math.sqrt(2), 95 + 5 / math.sqrt(2)
+    assert ty - y == pytest.approx(11 - tx, abs=1e-4)          # on the 45° line from (11, y)
+    assert y == pytest.approx(100 - 0.5 - 5 * (2 - math.sqrt(2)), abs=1e-4)
+    stats = b.mesh_stats(tmp_path / "h.stl")
+    # Hook spans 2.5 mm in x; in y from the root to the end of the 30° entry ramp.
+    assert stats["size_mm"][0] == pytest.approx(2.51, abs=0.02)
+    assert stats["size_mm"][1] == pytest.approx(2.5 + 0.4 + 2.5 / math.tan(math.radians(30)), abs=0.02)

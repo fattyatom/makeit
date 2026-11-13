@@ -13,12 +13,14 @@ import trimesh
 
 # name: (gimbal rotation, projection, axes visible on screen, extra -D).
 # "profile" looks along +y at a thin slice from the middle of the part
-# (lib/makeit.scad print_cut honours $section_at).
+# (lib/makeit.scad print_cut honours $section_at). "bed" overrides orient.
 VIEWS = {
     "iso": ("55,0,25", "perspective", (0, 1, 2), {}),
     "profile": ("90,0,0", "ortho", (0, 2), {"$section_at": "0.5"}),
     "side": ("90,0,90", "ortho", (1, 2), {}),
     "top": ("0,0,0", "ortho", (0, 1), {}),
+    # The exported part as it sits on the bed: check overhangs and bridges.
+    "bed": ("55,0,25", "perspective", (0, 1, 2), {"orient": '"print"'}),
 }
 
 
@@ -55,8 +57,11 @@ def _frame(exe: str, model: Path, sets: dict[str, str], rot: str, axes) -> str:
         _run([exe, "-o", str(stl), *_defines(sets), str(model)])
         lo, hi = trimesh.load(str(stl)).bounds
     center = (lo + hi) / 2
-    span = max(float(np.max((hi - lo)[list(axes)])), 1.0)
-    dist = span * (2.2 if len(axes) == 3 else 3.5)
+    ext = (hi - lo)[list(axes)]
+    # 3D views: fit the bounding sphere (diagonal) in the ~22.5° perspective view,
+    # which needs ~2.6 diagonals of distance; tall or deep parts fit too.
+    span = max(float(np.linalg.norm(ext) if len(axes) == 3 else np.max(ext)), 1.0)
+    dist = span * (2.8 if len(axes) == 3 else 3.5)
     return ",".join(f"{v:.3f}" for v in [*center, *map(float, rot.split(",")), dist])
 
 
@@ -78,7 +83,7 @@ def build(
     previews: bool = True,
     tag: str = "",
 ) -> dict:
-    """Export model.scad to out/ and render previews.
+    """Export model.scad to out/ and render previews (one per VIEWS entry).
 
     Exports use `orient="print"` (lying the way it should go on the bed),
     previews use `orient="installed"` with context ghosts; models that don't
